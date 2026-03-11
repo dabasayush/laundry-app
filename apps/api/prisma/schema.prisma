@@ -1,0 +1,288 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum Role {
+    CUSTOMER
+    DRIVER
+    ADMIN
+}
+
+enum OrderStatus {
+    PENDING
+    PICKUP_ASSIGNED
+    PICKED_UP
+    PROCESSING
+    OUT_FOR_DELIVERY
+    DELIVERED
+    CANCELLED
+}
+
+enum PaymentMethod {
+    CASH
+    UPI
+}
+
+enum PaymentStatus {
+    PENDING
+    COLLECTED
+    SETTLED
+}
+
+enum DiscountType {
+    PERCENTAGE
+    FLAT
+}
+
+enum BroadcastTarget {
+    ALL
+    CUSTOMER
+    DRIVER
+    SELECTED // specific user IDs provided in the request
+    INACTIVE // users inactive for N days (no orders placed)
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model User {
+    id            String    @id @default(uuid()) @db.Uuid
+    name          String?   @db.VarChar(100)
+    phone         String    @unique @db.VarChar(20)
+    email         String?   @unique @db.VarChar(255)
+    passwordHash  String?   @map("password_hash")
+    role          Role      @default(CUSTOMER)
+    fcmToken      String?   @map("fcm_token")
+    isVerified    Boolean   @default(false) @map("is_verified")
+    isActive      Boolean   @default(true) @map("is_active")
+    totalOrders   Int       @default(0) @map("total_orders")
+    totalSpent    Decimal   @default(0) @map("total_spent") @db.Decimal(12, 2)
+    lastOrderDate DateTime? @map("last_order_date")
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    addresses     Address[]
+    orders        Order[]
+    ratings       Rating[]
+    notifications Notification[]
+    refreshTokens RefreshToken[]
+
+    @@map("users")
+}
+
+model Address {
+    id        String   @id @default(uuid()) @db.Uuid
+    userId    String   @map("user_id") @db.Uuid
+    label     String   @db.VarChar(50)
+    line1     String   @map("line_1")
+    line2     String?  @map("line_2")
+    city      String   @db.VarChar(100)
+    state     String   @db.VarChar(100)
+    pincode   String   @db.VarChar(10)
+    lat       Decimal? @db.Decimal(9, 6)
+    lng       Decimal? @db.Decimal(9, 6)
+    isDefault Boolean  @default(false) @map("is_default")
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+    orders Order[]
+
+    @@index([userId])
+    @@map("addresses")
+}
+
+model Service {
+    id          String  @id @default(uuid()) @db.Uuid
+    name        String  @unique @db.VarChar(100)
+    description String?
+    isActive    Boolean @default(true) @map("is_active")
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    items ServiceItem[]
+
+    @@map("services")
+}
+
+model ServiceItem {
+    id        String  @id @default(uuid()) @db.Uuid
+    serviceId String  @map("service_id") @db.Uuid
+    name      String  @db.VarChar(100)
+    price     Decimal @db.Decimal(10, 2)
+    isActive  Boolean @default(true) @map("is_active")
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    service    Service     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+    orderItems OrderItem[]
+
+    @@unique([serviceId, name])
+    @@index([serviceId])
+    @@map("service_items")
+}
+
+model Driver {
+    id              String  @id @default(uuid()) @db.Uuid
+    name            String  @db.VarChar(100)
+    phone           String  @unique @db.VarChar(20)
+    vehicleNumber   String? @map("vehicle_number") @db.VarChar(20)
+    fcmToken        String? @map("fcm_token")
+    isActive        Boolean @default(true) @map("is_active")
+    isAvailable     Boolean @default(false) @map("is_available")
+    totalDeliveries Int     @default(0) @map("total_deliveries")
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    orders  Order[]
+    ratings Rating[]
+
+    @@map("drivers")
+}
+
+model Order {
+    id             String        @id @default(uuid()) @db.Uuid
+    userId         String        @map("user_id") @db.Uuid
+    driverId       String?       @map("driver_id") @db.Uuid
+    addressId      String?       @map("address_id") @db.Uuid
+    offerId        String?       @map("offer_id") @db.Uuid
+    totalAmount    Decimal       @map("total_amount") @db.Decimal(10, 2)
+    discountAmount Decimal       @default(0) @map("discount_amount") @db.Decimal(10, 2)
+    finalAmount    Decimal       @map("final_amount") @db.Decimal(10, 2)
+    paymentMethod  PaymentMethod @map("payment_method")
+    paymentStatus  PaymentStatus @default(PENDING) @map("payment_status")
+    status         OrderStatus   @default(PENDING)
+    notes          String?
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    user    User        @relation(fields: [userId], references: [id])
+    driver  Driver?     @relation(fields: [driverId], references: [id], onDelete: SetNull)
+    address Address?    @relation(fields: [addressId], references: [id], onDelete: SetNull)
+    offer   Offer?      @relation(fields: [offerId], references: [id], onDelete: SetNull)
+    items   OrderItem[]
+    rating  Rating?
+
+    @@index([userId])
+    @@index([driverId])
+    @@index([status])
+    @@index([paymentStatus])
+    @@map("orders")
+}
+
+model OrderItem {
+    id            String  @id @default(uuid()) @db.Uuid
+    orderId       String  @map("order_id") @db.Uuid
+    serviceItemId String  @map("service_item_id") @db.Uuid
+    quantity      Int     @default(1)
+    unitPrice     Decimal @map("unit_price") @db.Decimal(10, 2)
+    subtotal      Decimal @db.Decimal(10, 2)
+
+    createdAt DateTime @default(now()) @map("created_at")
+
+    order       Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+    serviceItem ServiceItem @relation(fields: [serviceItemId], references: [id])
+
+    @@index([orderId])
+    @@map("order_items")
+}
+
+model Offer {
+    id                String       @id @default(uuid()) @db.Uuid
+    code              String       @unique @db.VarChar(30)
+    description       String?
+    discountType      DiscountType @map("discount_type")
+    discountValue     Decimal      @map("discount_value") @db.Decimal(10, 2)
+    minOrderAmount    Decimal?     @map("min_order_amount") @db.Decimal(10, 2)
+    maxDiscountAmount Decimal?     @map("max_discount_amount") @db.Decimal(10, 2)
+    validFrom         DateTime     @map("valid_from")
+    validTo           DateTime     @map("valid_to")
+    usageLimit        Int?         @map("usage_limit")
+    usedCount         Int          @default(0) @map("used_count")
+    isActive          Boolean      @default(true) @map("is_active")
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    orders Order[]
+
+    @@map("offers")
+}
+
+model Rating {
+    id       String  @id @default(uuid()) @db.Uuid
+    orderId  String  @unique @map("order_id") @db.Uuid
+    userId   String  @map("user_id") @db.Uuid
+    driverId String? @map("driver_id") @db.Uuid
+    rating   Int
+    comment  String?
+
+    createdAt DateTime @default(now()) @map("created_at")
+
+    order  Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+    user   User    @relation(fields: [userId], references: [id])
+    driver Driver? @relation(fields: [driverId], references: [id], onDelete: SetNull)
+
+    @@index([userId])
+    @@index([driverId])
+    @@map("ratings")
+}
+
+model Notification {
+    id     String  @id @default(uuid()) @db.Uuid
+    userId String  @map("user_id") @db.Uuid
+    title  String
+    body   String
+    type   String  @default("GENERAL")
+    data   Json?
+    isRead Boolean @default(false) @map("is_read")
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([userId])
+    @@map("notifications")
+}
+
+model Broadcast {
+    id        String          @id @default(uuid()) @db.Uuid
+    title     String
+    body      String
+    target    BroadcastTarget @default(ALL)
+    sentAt    DateTime?       @map("sent_at")
+    createdBy String?         @map("created_by") @db.Uuid
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    @@map("broadcasts")
+}
+
+model RefreshToken {
+    id        String   @id @default(uuid()) @db.Uuid
+    userId    String   @map("user_id") @db.Uuid
+    tokenHash String   @unique @map("token_hash")
+    isRevoked Boolean  @default(false) @map("is_revoked")
+    expiresAt DateTime @map("expires_at")
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("refresh_tokens")
+}

@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "lib": ["ES2022"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@laundry/shared-types": ["packages/shared-types/src/index.ts"],
+      "@laundry/utils": ["packages/utils/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "dist", ".next", "coverage"]
+}

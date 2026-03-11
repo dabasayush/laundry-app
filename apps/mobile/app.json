@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "Laundry",
+    "slug": "laundry-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.laundry.mobile"
+    },
+    "android": {
+      "package": "com.laundry.mobile"
+    },
+    "plugins": ["expo-router", "expo-secure-store"],
+    "scheme": "laundry",
+    "extra": {
+      "eas": {
+        "projectId": "laundry-mobile"
+      }
+    }
+  }
+}

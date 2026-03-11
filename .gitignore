@@ -1,0 +1,40 @@
+# Laundry Platform — Monorepo
+# ─────────────────────────────
+# Root
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.log
+coverage/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/settings.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Build outputs
+apps/api/dist/
+apps/admin/.next/
+apps/mobile/.expo/
+packages/*/dist/
+
+# Database
+*.sqlite
+*.db
+
+# Secrets / Keys
+*.pem
+*.key
+*.p12
+service-account.json
+google-services.json
+GoogleService-Info.plist

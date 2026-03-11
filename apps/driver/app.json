@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "Laundry Driver",
+    "slug": "laundry-driver",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#059669"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.laundry.driver",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Laundry Driver needs your location to show your position on the delivery map.",
+        "NSLocationAlwaysUsageDescription": "Laundry Driver needs your location to track your position during deliveries."
+      },
+      "config": {
+        "googleMapsApiKey": "$(GOOGLE_MAPS_API_KEY)"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#059669"
+      },
+      "package": "com.laundry.driver",
+      "config": {
+        "googleMaps": {
+          "apiKey": "$(GOOGLE_MAPS_API_KEY)"
+        }
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow Laundry Driver to access your location to show your position on the delivery map."
+        }
+      ]
+    ],
+    "scheme": "laundry-driver",
+    "extra": {
+      "eas": {
+        "projectId": "laundry-driver"
+      }
+    }
+  }
+}
