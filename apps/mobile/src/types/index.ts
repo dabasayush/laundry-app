@@ -14,9 +14,13 @@ export type PaymentMethod = "CASH" | "UPI" | "CARD" | "WALLET";
 
 export interface User {
   id: string;
-  name: string;
+  name: string | null;
   phone: string;
   email: string | null;
+  gender?: "MALE" | "FEMALE" | "OTHER";
+  address?: string;
+  locationLat?: number;
+  locationLng?: number;
   role: string;
   isActive: boolean;
   isVerified: boolean;
@@ -91,6 +95,16 @@ export interface Slot {
   date: string;
   time: string;
   available: boolean;
+}
+
+export interface Banner {
+  id: string;
+  title: string | null;
+  imageUrl: string;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CartItem {

@@ -1,5 +1,5 @@
 import apiClient from "../lib/apiClient";
-import type { Order, Service, ServiceItem, Slot } from "../types";
+import type { Banner, Order, Service, ServiceItem, Slot } from "../types";
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 export const authApi = {
@@ -42,7 +42,7 @@ export const serviceApi = {
 export const serviceItemApi = {
   listByService: (serviceId: string) =>
     apiClient.get<{ data: ServiceItem[]; meta: { total: number } }>(
-      `/service-items?serviceId=${serviceId}&limit=100`,
+      `/service-items?serviceId=${serviceId}&limit=50`,
     ),
 };
 
@@ -74,5 +74,13 @@ export const paymentApi = {
   createIntent: (orderId: string) =>
     apiClient.post<{ data: { clientSecret: string } }>("/payments/intent", {
       orderId,
+    }),
+};
+
+// ── Banners ──────────────────────────────────────────────────────────────────
+export const bannerApi = {
+  list: () =>
+    apiClient.get<{ data: Banner[] }>("/banners", {
+      params: { isActive: true },
     }),
 };

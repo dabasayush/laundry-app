@@ -16,8 +16,8 @@ import { useCreateOrder } from "../src/hooks/useBooking";
 import type { PaymentMethod } from "../src/types";
 
 const COLORS = {
-  primary: "#4F46E5",
-  primaryLight: "#EEF2FF",
+  primary: "#1F4D3A",
+  primaryLight: "#7FAF9A",
   success: "#10B981",
   text: "#1E293B",
   textMuted: "#64748B",
@@ -234,6 +234,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 15,
     fontWeight: "700",
+    fontFamily: "PlayfairDisplay_700Bold",
     color: COLORS.text,
     marginBottom: 14,
   },
@@ -312,7 +313,12 @@ const styles = StyleSheet.create({
     padding: 40,
     backgroundColor: COLORS.background,
   },
-  emptyText: { fontSize: 17, fontWeight: "700", color: COLORS.text },
+  emptyText: {
+    fontSize: 17,
+    fontWeight: "700",
+    fontFamily: "PlayfairDisplay_700Bold",
+    color: COLORS.text,
+  },
   browseBtn: {
     backgroundColor: COLORS.primary,
     paddingHorizontal: 28,

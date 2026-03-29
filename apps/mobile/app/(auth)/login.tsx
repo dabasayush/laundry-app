@@ -16,8 +16,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { authApi } from "../../src/services/api";
 
 const COLORS = {
-  primary: "#4F46E5",
-  primaryLight: "#EEF2FF",
+  primary: "#1F4D3A",
+  primaryLight: "#7FAF9A",
   text: "#1E293B",
   textMuted: "#64748B",
   border: "#E2E8F0",
@@ -130,12 +130,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "700",
+    fontFamily: "PlayfairDisplay_700Bold",
     color: COLORS.text,
     textAlign: "center",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 15,
+    fontFamily: "Inter_400Regular",
     color: COLORS.textMuted,
     textAlign: "center",
     marginBottom: 36,

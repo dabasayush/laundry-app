@@ -13,6 +13,7 @@ import type {
   PaginatedApiResponse,
   Product,
   Item,
+  Banner,
 } from "../types";
 
 export const adminApi = {
@@ -107,7 +108,7 @@ export const adminApi = {
     serviceId: string,
   ): Promise<PaginatedApiResponse<ServiceItem>> =>
     adminApiClient
-      .get("/service-items", { params: { serviceId, limit: 100 } })
+      .get("/service-items", { params: { serviceId, limit: 50 } })
       .then((r) => r.data),
 
   createServiceItem: (data: {
@@ -261,4 +262,20 @@ export const adminApi = {
     adminApiClient
       .post(`/items/${itemId}/services`, { assignments })
       .then((r) => r.data.data),
+
+  // ── App Banners ───────────────────────────────────────────────────────────
+
+  listBanners: (): Promise<Banner[]> =>
+    adminApiClient.get("/banners").then((r) => r.data.data),
+
+  createBanner: (data: {
+    title?: string;
+    imageUrl: string;
+    isActive?: boolean;
+    sortOrder?: number;
+  }): Promise<Banner> =>
+    adminApiClient.post("/banners", data).then((r) => r.data.data),
+
+  deleteBanner: (id: string): Promise<void> =>
+    adminApiClient.delete(`/banners/${id}`).then(() => undefined),
 };

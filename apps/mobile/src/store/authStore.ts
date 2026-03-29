@@ -13,6 +13,7 @@ interface AuthState {
   refreshToken: string | null;
   isAuthenticated: boolean;
   setAuth: (user: Partial<User>, tokens: TokenPair) => Promise<void>;
+  updateUser: (patch: Partial<User>) => Promise<void>;
   clearAuth: () => Promise<void>;
   loadFromStorage: () => Promise<void>;
 }
@@ -32,6 +33,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     await SecureStore.setItemAsync(REFRESH_KEY, tokens.refreshToken);
     await SecureStore.setItemAsync(USER_KEY, JSON.stringify(user));
     set({ user, ...tokens, isAuthenticated: true });
+  },
+
+  updateUser: async (patch) => {
+    const current = useAuthStore.getState().user ?? {};
+    const merged = { ...current, ...patch };
+    await SecureStore.setItemAsync(USER_KEY, JSON.stringify(merged));
+    set({ user: merged });
   },
 
   clearAuth: async () => {

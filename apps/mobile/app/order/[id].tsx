@@ -14,8 +14,8 @@ import { useOrder, useCancelOrder } from "../../src/hooks/useBooking";
 import type { OrderStatus } from "../../src/types";
 
 const COLORS = {
-  primary: "#4F46E5",
-  primaryLight: "#EEF2FF",
+  primary: "#1F4D3A",
+  primaryLight: "#7FAF9A",
   success: "#10B981",
   successLight: "#ECFDF5",
   warning: "#F59E0B",
@@ -280,6 +280,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 15,
     fontWeight: "700",
+    fontFamily: "PlayfairDisplay_700Bold",
     color: COLORS.text,
     marginBottom: 16,
   },

@@ -15,8 +15,8 @@ import { useAuthStore } from "../../src/store/authStore";
 import { userApi } from "../../src/services/api";
 
 const COLORS = {
-  primary: "#4F46E5",
-  primaryLight: "#EEF2FF",
+  primary: "#1F4D3A",
+  primaryLight: "#7FAF9A",
   danger: "#EF4444",
   dangerLight: "#FEF2F2",
   text: "#1E293B",
@@ -211,6 +211,7 @@ const styles = StyleSheet.create({
   avatarName: {
     fontSize: 20,
     fontWeight: "700",
+    fontFamily: "PlayfairDisplay_700Bold",
     color: COLORS.text,
     marginBottom: 4,
   },
@@ -230,7 +231,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
-  sectionTitle: { fontSize: 15, fontWeight: "700", color: COLORS.text },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    fontFamily: "PlayfairDisplay_700Bold",
+    color: COLORS.text,
+  },
   editLink: { fontSize: 13, color: COLORS.primary, fontWeight: "600" },
   field: { marginBottom: 14 },
   label: {

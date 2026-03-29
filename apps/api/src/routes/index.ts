@@ -12,6 +12,7 @@ import offerRoutes from "./offer.routes";
 import marketingRoutes from "./marketing.routes";
 import productRoutes from "./product.routes";
 import itemRoutes from "./item.routes";
+import bannerRoutes from "./banner.routes";
 
 const router = Router();
 
@@ -28,5 +29,6 @@ router.use("/analytics", analyticsRoutes);
 router.use("/offers", offerRoutes);
 router.use("/marketing", marketingRoutes);
 router.use("/products", productRoutes);
+router.use("/banners", bannerRoutes);
 
 export default router;

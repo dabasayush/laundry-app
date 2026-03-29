@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { View, Text, StyleSheet } from "react-native";
 import { useCartStore } from "../../src/store/cartStore";
 
-const PRIMARY = "#4F46E5";
+const PRIMARY = "#1F4D3A";
 
 function CartTabIcon({ color, size }: { color: string; size: number }) {
   const itemCount = useCartStore((s) => s.itemCount());
@@ -35,7 +35,11 @@ export default function TabsLayout() {
           height: 60,
           paddingBottom: 6,
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: "600",
+          fontFamily: "Inter_600SemiBold",
+        },
       }}
     >
       <Tabs.Screen

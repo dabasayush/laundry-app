@@ -233,3 +233,13 @@ export interface Product {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface Banner {
+  id: string;
+  title: string | null;
+  imageUrl: string;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}

@@ -10,12 +10,12 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useServices } from "../../src/hooks/useBooking";
-import type { Service } from "../../src/types";
+import { useServices } from "../../../src/hooks/useBooking";
+import type { Service } from "../../../src/types";
 
 const COLORS = {
-  primary: "#4F46E5",
-  primaryLight: "#EEF2FF",
+  primary: "#1F4D3A",
+  primaryLight: "#7FAF9A",
   text: "#1E293B",
   textMuted: "#64748B",
   border: "#E2E8F0",
@@ -24,13 +24,14 @@ const COLORS = {
 };
 
 function ServiceCard({ item }: { item: Service }) {
-  const activeItems = (item.items ?? []).filter((i) => i.isActive);
-
   return (
     <TouchableOpacity
       style={styles.card}
       onPress={() =>
-        router.push({ pathname: "/services/[id]", params: { id: item.id } })
+        router.push({
+          pathname: "/(tabs)/services/[id]",
+          params: { id: item.id },
+        })
       }
       activeOpacity={0.85}
     >
@@ -48,29 +49,6 @@ function ServiceCard({ item }: { item: Service }) {
             {item.description}
           </Text>
         ) : null}
-        {activeItems.length > 0 && (
-          <View style={styles.itemChips}>
-            {activeItems.slice(0, 4).map((si) => (
-              <View key={si.id} style={styles.itemChip}>
-                {si.item?.imageUrl ? (
-                  <Image
-                    source={{ uri: si.item.imageUrl }}
-                    style={styles.chipImage}
-                  />
-                ) : null}
-                <Text style={styles.chipText}>{si.name}</Text>
-                <Text style={styles.chipPrice}>₹{Number(si.price)}</Text>
-              </View>
-            ))}
-            {activeItems.length > 4 && (
-              <View style={styles.itemChip}>
-                <Text style={styles.chipText}>
-                  +{activeItems.length - 4} more
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
       </View>
       <Ionicons name="chevron-forward" size={20} color={COLORS.textMuted} />
     </TouchableOpacity>
@@ -131,7 +109,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
-  headerTitle: { fontSize: 22, fontWeight: "700", color: COLORS.text },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    fontFamily: "PlayfairDisplay_700Bold",
+    color: COLORS.text,
+  },
   headerSub: { fontSize: 13, color: COLORS.textMuted, marginTop: 4 },
   list: { padding: 16, paddingBottom: 32 },
   card: {
@@ -155,41 +138,17 @@ const styles = StyleSheet.create({
   },
   cardImage: { width: 56, height: 56, borderRadius: 28 },
   cardBody: { flex: 1 },
-  cardName: { fontSize: 16, fontWeight: "700", color: COLORS.text },
+  cardName: {
+    fontSize: 16,
+    fontWeight: "700",
+    fontFamily: "PlayfairDisplay_700Bold",
+    color: COLORS.text,
+  },
   cardDesc: {
     fontSize: 13,
     color: COLORS.textMuted,
     marginTop: 4,
     lineHeight: 18,
-  },
-  itemChips: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-    marginTop: 8,
-  },
-  itemChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.primaryLight,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    gap: 4,
-  },
-  chipImage: {
-    width: 16,
-    height: 16,
-    borderRadius: 4,
-  },
-  chipText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: COLORS.primary,
-  },
-  chipPrice: {
-    fontSize: 11,
-    color: COLORS.textMuted,
   },
   center: {
     flex: 1,

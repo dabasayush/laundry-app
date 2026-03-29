@@ -14,8 +14,8 @@ import { useOrders } from "../../src/hooks/useBooking";
 import type { Order, OrderStatus } from "../../src/types";
 
 const COLORS = {
-  primary: "#4F46E5",
-  primaryLight: "#EEF2FF",
+  primary: "#1F4D3A",
+  primaryLight: "#7FAF9A",
   success: "#10B981",
   successLight: "#ECFDF5",
   warning: "#F59E0B",
@@ -151,7 +151,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
-  headerTitle: { fontSize: 22, fontWeight: "700", color: COLORS.text },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    fontFamily: "PlayfairDisplay_700Bold",
+    color: COLORS.text,
+  },
   list: { padding: 16, paddingBottom: 32 },
   card: {
     backgroundColor: COLORS.white,
@@ -188,7 +193,12 @@ const styles = StyleSheet.create({
     padding: 32,
     gap: 12,
   },
-  emptyTitle: { fontSize: 18, fontWeight: "700", color: COLORS.text },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    fontFamily: "PlayfairDisplay_700Bold",
+    color: COLORS.text,
+  },
   emptySubtitle: {
     fontSize: 13,
     color: COLORS.textMuted,

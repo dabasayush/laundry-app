@@ -16,8 +16,8 @@ import { authApi } from "../../src/services/api";
 import { useAuthStore } from "../../src/store/authStore";
 
 const COLORS = {
-  primary: "#4F46E5",
-  primaryLight: "#EEF2FF",
+  primary: "#1F4D3A",
+  primaryLight: "#7FAF9A",
   text: "#1E293B",
   textMuted: "#64748B",
   border: "#E2E8F0",
@@ -77,7 +77,11 @@ export default function OtpScreen() {
     try {
       const { data } = await authApi.verifyOtp(phone, code);
       await setAuth(data.data.user, data.data.tokens);
-      router.replace("/(tabs)");
+      if (!data.data.user?.name?.trim()) {
+        router.replace("/(auth)/complete-profile");
+      } else {
+        router.replace("/(tabs)");
+      }
     } catch (err: any) {
       Alert.alert(
         "Verification Failed",
@@ -218,11 +222,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontWeight: "700",
+    fontFamily: "PlayfairDisplay_700Bold",
     color: COLORS.text,
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 15,
+    fontFamily: "Inter_400Regular",
     color: COLORS.textMuted,
     textAlign: "center",
     lineHeight: 22,

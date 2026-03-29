@@ -8,12 +8,15 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useCartStore } from "../../src/store/cartStore";
 import type { CartItem } from "../../src/types";
 
 const COLORS = {
-  primary: "#4F46E5",
-  primaryLight: "#EEF2FF",
+  primary: "#1F4D3A",
+  primaryLight: "#7FAF9A",
+  secondaryGradientTop: "#3E7A66",
+  secondaryGradientBottom: "#1F4D3A",
   danger: "#EF4444",
   dangerLight: "#FEF2F2",
   text: "#1E293B",
@@ -124,6 +127,28 @@ export default function CartScreen() {
           <Text style={styles.totalValue}>₹{cartTotal.toFixed(2)}</Text>
         </View>
         <TouchableOpacity
+          style={styles.addMoreBtn}
+          onPress={() => router.push("/(tabs)/services")}
+          activeOpacity={0.85}
+        >
+          <LinearGradient
+            colors={[
+              COLORS.secondaryGradientTop,
+              COLORS.secondaryGradientBottom,
+            ]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.addMoreGradient}
+          >
+            <Ionicons
+              name="add-circle-outline"
+              size={18}
+              color={COLORS.white}
+            />
+            <Text style={styles.addMoreText}>Add More Items / Services</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+        <TouchableOpacity
           style={styles.checkoutBtn}
           onPress={() => router.push("/order-summary")}
           activeOpacity={0.85}
@@ -148,7 +173,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
-  headerTitle: { fontSize: 22, fontWeight: "700", color: COLORS.text },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    fontFamily: "PlayfairDisplay_700Bold",
+    color: COLORS.text,
+  },
   clearText: { fontSize: 13, color: COLORS.danger, fontWeight: "600" },
   list: { padding: 0 },
   row: {
@@ -205,6 +235,19 @@ const styles = StyleSheet.create({
   },
   totalLabel: { fontSize: 16, fontWeight: "700", color: COLORS.text },
   totalValue: { fontSize: 18, fontWeight: "700", color: COLORS.primary },
+  addMoreBtn: {
+    borderRadius: 12,
+    overflow: "hidden",
+    marginTop: 12,
+  },
+  addMoreGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
+  },
+  addMoreText: { color: COLORS.white, fontSize: 15, fontWeight: "700" },
   checkoutBtn: {
     flexDirection: "row",
     backgroundColor: COLORS.primary,
@@ -224,7 +267,12 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     gap: 12,
   },
-  emptyTitle: { fontSize: 20, fontWeight: "700", color: COLORS.text },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    fontFamily: "PlayfairDisplay_700Bold",
+    color: COLORS.text,
+  },
   emptySubtitle: {
     fontSize: 14,
     color: COLORS.textMuted,

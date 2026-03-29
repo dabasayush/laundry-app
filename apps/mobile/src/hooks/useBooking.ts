@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "react-query";
-import { orderApi, serviceApi, slotApi } from "../services/api";
+import { bannerApi, orderApi, serviceApi, slotApi } from "../services/api";
 import type { Order } from "../types";
 
 export function useServices() {
@@ -55,5 +55,11 @@ export function useCancelOrder() {
       queryClient.invalidateQueries(["order", id]);
       queryClient.invalidateQueries("orders");
     },
+  });
+}
+
+export function useBanners() {
+  return useQuery("banners", () => bannerApi.list().then((r) => r.data.data), {
+    staleTime: 5 * 60 * 1000,
   });
 }

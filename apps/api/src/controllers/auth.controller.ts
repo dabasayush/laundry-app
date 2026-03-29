@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import * as authService from "../services/auth.service";
 import * as otpService from "../services/otp.service";
 import { sendSuccess, sendCreated } from "../utils/apiResponse";
+import { logger } from "../config/logger";
 
 export async function register(
   req: Request,
@@ -63,9 +64,12 @@ export async function sendOtp(
   next: NextFunction,
 ): Promise<void> {
   try {
+    logger.info(`📞 [sendOtp] Received request for phone: ${req.body.phone}`);
     await otpService.sendOtp(req.body.phone);
+    logger.info(`✅ [sendOtp] Successfully sent OTP to ${req.body.phone}`);
     sendSuccess(res, null, 200, "OTP sent successfully");
   } catch (err) {
+    logger.error(`❌ [sendOtp] Error: ${err}`);
     next(err);
   }
 }

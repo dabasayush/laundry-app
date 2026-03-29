@@ -3,6 +3,7 @@ import {
   View,
   Text,
   ScrollView,
+  Image,
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
@@ -11,12 +12,12 @@ import {
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "../../src/store/authStore";
-import { useOrders } from "../../src/hooks/useBooking";
-import type { Order, OrderStatus } from "../../src/types";
+import { useBanners, useOrders } from "../../src/hooks/useBooking";
+import type { Banner, Order, OrderStatus } from "../../src/types";
 
 const COLORS = {
-  primary: "#4F46E5",
-  primaryLight: "#EEF2FF",
+  primary: "#1F4D3A",
+  primaryLight: "#7FAF9A",
   success: "#10B981",
   successLight: "#ECFDF5",
   warning: "#F59E0B",
@@ -47,56 +48,40 @@ function getStatusLabel(status: OrderStatus) {
   return status.replace(/_/g, " ");
 }
 
-function ActiveOrderCard({ order }: { order: Order }) {
-  const sc = getStatusColor(order.status);
+function BannerSlider({ banners }: { banners: Banner[] }) {
   return (
-    <TouchableOpacity
-      style={styles.activeOrderCard}
-      onPress={() =>
-        router.push({ pathname: "/order/[id]", params: { id: order.id } })
-      }
-      activeOpacity={0.85}
+    <ScrollView
+      horizontal
+      pagingEnabled
+      showsHorizontalScrollIndicator={false}
+      style={styles.bannerScroll}
+      contentContainerStyle={styles.bannerScrollContent}
     >
-      <View style={styles.activeOrderHeader}>
-        <View>
-          <Text style={styles.activeOrderLabel}>Active Order</Text>
-          <Text style={styles.activeOrderId}>
-            #{order.id.slice(0, 8).toUpperCase()}
-          </Text>
+      {banners.map((banner) => (
+        <View key={banner.id} style={styles.bannerCard}>
+          <Image
+            source={{ uri: banner.imageUrl }}
+            style={styles.bannerImage}
+            resizeMode="cover"
+          />
+          {banner.title ? (
+            <View style={styles.bannerTitleWrap}>
+              <Text style={styles.bannerTitle}>{banner.title}</Text>
+            </View>
+          ) : null}
         </View>
-        <View style={[styles.statusBadge, { backgroundColor: sc.bg }]}>
-          <Text style={[styles.statusText, { color: sc.fg }]}>
-            {getStatusLabel(order.status)}
-          </Text>
-        </View>
-      </View>
-      <View style={styles.activeOrderFooter}>
-        <Text style={styles.activeOrderAmount}>
-          ₹{order.finalAmount.toFixed(2)}
-        </Text>
-        <View style={styles.trackBtn}>
-          <Text style={styles.trackBtnText}>Track Order</Text>
-          <Ionicons name="arrow-forward" size={14} color={COLORS.primary} />
-        </View>
-      </View>
-    </TouchableOpacity>
+      ))}
+    </ScrollView>
   );
 }
 
 export default function DashboardScreen() {
   const user = useAuthStore((s) => s.user);
   const { data, isLoading, refetch, isFetching } = useOrders(1);
+  const { data: bannerData, isLoading: bannersLoading } = useBanners();
 
   const orders: Order[] = data?.data ?? [];
-  const activeStatuses: OrderStatus[] = [
-    "PENDING",
-    "PICKUP_ASSIGNED",
-    "PICKED_UP",
-    "PROCESSING",
-    "OUT_FOR_DELIVERY",
-  ];
-  const activeOrder =
-    orders.find((o) => activeStatuses.includes(o.status)) ?? null;
+  const banners: Banner[] = bannerData ?? [];
   const recentOrders = orders.slice(0, 3);
 
   const greeting = () => {
@@ -132,22 +117,17 @@ export default function DashboardScreen() {
         />
       </View>
 
-      {/* Active Order */}
-      {isLoading ? (
+      {/* Top Banner Slider */}
+      {bannersLoading ? (
         <ActivityIndicator
           color={COLORS.primary}
-          style={{ marginVertical: 20 }}
+          style={{ marginBottom: 24 }}
         />
-      ) : activeOrder ? (
-        <ActiveOrderCard order={activeOrder} />
+      ) : banners.length > 0 ? (
+        <BannerSlider banners={banners} />
       ) : (
-        <View style={styles.noActiveOrder}>
-          <Ionicons
-            name="checkmark-circle-outline"
-            size={32}
-            color={COLORS.success}
-          />
-          <Text style={styles.noActiveText}>No active orders</Text>
+        <View style={styles.emptyBannerCard}>
+          <Text style={styles.emptyBannerText}>No banners available</Text>
         </View>
       )}
 
@@ -268,6 +248,7 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 22,
     fontWeight: "700",
+    fontFamily: "PlayfairDisplay_700Bold",
     color: COLORS.text,
     marginTop: 2,
   },
@@ -326,6 +307,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",
+    fontFamily: "PlayfairDisplay_700Bold",
     color: COLORS.text,
     marginBottom: 12,
   },
@@ -376,4 +358,51 @@ const styles = StyleSheet.create({
   orderRowAmount: { fontSize: 14, fontWeight: "700", color: COLORS.text },
   statusBadge: { borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 },
   statusText: { fontSize: 11, fontWeight: "600" },
+  bannerScroll: {
+    marginBottom: 24,
+  },
+  bannerScrollContent: {
+    gap: 12,
+    paddingRight: 20,
+  },
+  bannerCard: {
+    width: 320,
+    height: 160,
+    borderRadius: 14,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.white,
+  },
+  bannerImage: {
+    width: "100%",
+    height: "100%",
+  },
+  bannerTitleWrap: {
+    position: "absolute",
+    left: 10,
+    right: 10,
+    bottom: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: "rgba(0,0,0,0.45)",
+  },
+  bannerTitle: {
+    color: COLORS.white,
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  emptyBannerCard: {
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 12,
+    padding: 16,
+    backgroundColor: COLORS.white,
+  },
+  emptyBannerText: {
+    color: COLORS.textMuted,
+    fontSize: 14,
+  },
 });

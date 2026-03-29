@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { prisma } from "../config/prisma";
 import { getRedisClient } from "../config/redis";
 import { env } from "../config/env";
+import { logger } from "../config/logger";
 import { signAccessToken } from "../utils/jwt";
 import { AppError } from "../middleware/errorHandler";
 import { CacheKeys } from "../utils/cache";
@@ -110,6 +111,8 @@ async function issueTokens(
  */
 export async function sendOtp(phone: string): Promise<void> {
   const otp = generateOtp();
+  logger.info(`🔍 [OTP Service] Generated OTP for ${phone}: ${otp}`);
+
   const redis = getRedisClient();
 
   // Store OTP and reset any prior failed-attempt counter atomically
@@ -120,12 +123,15 @@ export async function sendOtp(phone: string): Promise<void> {
 
   // In development, log the OTP and skip real SMS dispatch
   if (env.NODE_ENV === "development") {
-    console.log(`\n=============================`);
-    console.log(`[DEV OTP] ${phone} → ${otp}`);
-    console.log(`=============================\n`);
+    logger.warn(
+      `\n${"=".repeat(40)}\n🎯 [DEV MODE] OTP Code for Testing:\nPhone: ${phone}\nCode: ${otp}\n${"=".repeat(40)}\n`,
+    );
     return;
   }
 
+  logger.info(
+    `📱 [OTP Service] Sending OTP via ${env.SMS_PROVIDER} to ${phone}`,
+  );
   await dispatchSms(phone, otp);
 }
 
