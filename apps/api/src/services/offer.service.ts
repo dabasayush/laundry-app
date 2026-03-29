@@ -184,6 +184,8 @@ export async function createOffer(data: CreateOfferDto): Promise<Offer> {
       validTo: data.validTo,
       usageLimit: data.usageLimit,
       isActive: data.isActive,
+      applicableServiceId: data.applicableServiceId ?? null,
+      applicableItemId: data.applicableItemId ?? null,
     },
   });
   await cacheDel(CacheKeys.offerList());

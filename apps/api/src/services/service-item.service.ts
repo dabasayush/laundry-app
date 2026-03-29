@@ -6,10 +6,13 @@ import { AppError } from "../middleware/errorHandler";
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 export type ServiceItemWithService = Prisma.ServiceItemGetPayload<{
-  include: { service: true };
+  include: { service: true; item: true };
 }>;
 
-const WITH_SERVICE = { service: true } satisfies Prisma.ServiceItemInclude;
+const WITH_SERVICE = {
+  service: true,
+  item: true,
+} satisfies Prisma.ServiceItemInclude;
 
 // ── Queries ────────────────────────────────────────────────────────────────────
 
@@ -67,6 +70,7 @@ export async function findById(id: string): Promise<ServiceItemWithService> {
 
 export async function create(data: {
   serviceId: string;
+  itemId?: string;
   name: string;
   price: number;
   isActive?: boolean;
@@ -82,6 +86,7 @@ export async function create(data: {
   const item = await prisma.serviceItem.create({
     data: {
       serviceId: data.serviceId,
+      itemId: data.itemId ?? null,
       name: data.name,
       price: data.price,
       isActive: data.isActive ?? true,

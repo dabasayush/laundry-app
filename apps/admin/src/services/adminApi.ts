@@ -11,6 +11,8 @@ import type {
   DriverCashReport,
   OrderTrendPoint,
   PaginatedApiResponse,
+  Product,
+  Item,
 } from "../types";
 
 export const adminApi = {
@@ -81,11 +83,14 @@ export const adminApi = {
   // ── Services ────────────────────────────────────────────────────────────────
 
   listServices: (): Promise<Service[]> =>
-    adminApiClient.get("/services").then((r) => r.data.data),
+    adminApiClient
+      .get("/services", { params: { limit: 200 } })
+      .then((r) => r.data.data),
 
   createService: (data: {
     name: string;
     description?: string;
+    imageUrl?: string;
     isActive?: boolean;
   }): Promise<Service> =>
     adminApiClient.post("/services", data).then((r) => r.data.data),
@@ -175,5 +180,85 @@ export const adminApi = {
         status: "PICKUP_ASSIGNED",
         driverId,
       })
+      .then((r) => r.data.data),
+
+  // ── Products ─────────────────────────────────────────────────────────────────
+
+  listProducts: (params?: {
+    page?: number;
+    limit?: number;
+    isActive?: boolean;
+  }): Promise<PaginatedApiResponse<Product>> =>
+    adminApiClient.get("/products", { params }).then((r) => r.data),
+
+  getProduct: (id: string): Promise<Product> =>
+    adminApiClient.get(`/products/${id}`).then((r) => r.data.data),
+
+  createProduct: (data: {
+    name: string;
+    description?: string;
+    price: number;
+    imageUrl?: string;
+    stock?: number;
+    isActive?: boolean;
+  }): Promise<Product> =>
+    adminApiClient.post("/products", data).then((r) => r.data.data),
+
+  updateProduct: (
+    id: string,
+    data: {
+      name?: string;
+      description?: string;
+      price?: number;
+      imageUrl?: string;
+      stock?: number;
+      isActive?: boolean;
+    },
+  ): Promise<Product> =>
+    adminApiClient.patch(`/products/${id}`, data).then((r) => r.data.data),
+
+  deleteProduct: (id: string): Promise<void> =>
+    adminApiClient.delete(`/products/${id}`).then(() => undefined),
+
+  // ── Items ───────────────────────────────────────────────────────────────────
+
+  listItems: (params?: {
+    page?: number;
+    limit?: number;
+    isActive?: boolean;
+  }): Promise<PaginatedApiResponse<Item>> =>
+    adminApiClient.get("/items", { params }).then((r) => r.data),
+
+  getItem: (id: string): Promise<Item> =>
+    adminApiClient.get(`/items/${id}`).then((r) => r.data.data),
+
+  createItem: (data: {
+    name: string;
+    description?: string;
+    imageUrl?: string;
+    isActive?: boolean;
+  }): Promise<Item> =>
+    adminApiClient.post("/items", data).then((r) => r.data.data),
+
+  updateItem: (
+    id: string,
+    data: {
+      name?: string;
+      description?: string;
+      imageUrl?: string;
+      isActive?: boolean;
+    },
+  ): Promise<Item> =>
+    adminApiClient.patch(`/items/${id}`, data).then((r) => r.data.data),
+
+  deleteItem: (id: string): Promise<void> =>
+    adminApiClient.delete(`/items/${id}`).then(() => undefined),
+
+  assignItemServices: (
+    itemId: string,
+    assignments: Array<{ serviceId: string; price: number }>,
+  ): Promise<Item> =>
+    adminApiClient
+      .post(`/items/${itemId}/services`, { assignments })
       .then((r) => r.data.data),
 };

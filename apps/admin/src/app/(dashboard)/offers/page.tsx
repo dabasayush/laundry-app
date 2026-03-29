@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import { Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { adminApi } from "../../../services/adminApi";
 import { Card, CardContent } from "../../../components/ui/card";
@@ -18,7 +19,7 @@ import {
   DialogFooter,
 } from "../../../components/ui/dialog";
 import { formatCurrency, formatDate } from "../../../lib/utils";
-import type { Offer, DiscountType } from "../../../types";
+import type { Offer, DiscountType, Service, Item } from "../../../types";
 
 type OfferForm = {
   code: string;
@@ -31,6 +32,8 @@ type OfferForm = {
   validTo: string;
   usageLimit: string;
   isActive: boolean;
+  applicableServiceId: string;
+  applicableItemId: string;
 };
 
 const EMPTY_FORM: OfferForm = {
@@ -44,6 +47,8 @@ const EMPTY_FORM: OfferForm = {
   validTo: "",
   usageLimit: "",
   isActive: true,
+  applicableServiceId: "",
+  applicableItemId: "",
 };
 
 function toApiPayload(form: OfferForm) {
@@ -62,6 +67,8 @@ function toApiPayload(form: OfferForm) {
     validTo: new Date(form.validTo).toISOString(),
     usageLimit: form.usageLimit ? Number(form.usageLimit) : undefined,
     isActive: form.isActive,
+    applicableServiceId: form.applicableServiceId || null,
+    applicableItemId: form.applicableItemId || null,
   };
 }
 
@@ -77,6 +84,18 @@ export default function OffersPage() {
     queryFn: () => adminApi.listOffers({ page, limit: 15 }),
   });
 
+  // Fetch services and items for targeting dropdowns
+  const { data: services = [] } = useQuery<Service[]>({
+    queryKey: ["services"],
+    queryFn: () => adminApi.listServices(),
+  });
+
+  const { data: itemsData } = useQuery({
+    queryKey: ["items-all"],
+    queryFn: () => adminApi.listItems({ limit: 200 }),
+  });
+  const allItems: Item[] = itemsData?.data ?? [];
+
   const saveMutation = useMutation({
     mutationFn: () =>
       editing
@@ -84,19 +103,34 @@ export default function OffersPage() {
         : adminApi.createOffer(toApiPayload(form)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["offers"] });
+      toast.success(editing ? "Offer updated" : "Offer created");
       setIsOpen(false);
+    },
+    onError: (err: unknown) => {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "Failed to save offer";
+      toast.error(msg);
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => adminApi.deleteOffer(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["offers"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["offers"] });
+      toast.success("Offer deleted");
+    },
+    onError: () => toast.error("Failed to delete offer"),
   });
 
   const toggleMutation = useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
       adminApi.updateOffer(id, { isActive }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["offers"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["offers"] });
+      toast.success("Offer toggled");
+    },
+    onError: () => toast.error("Failed to update offer"),
   });
 
   function openCreate() {
@@ -120,6 +154,8 @@ export default function OffersPage() {
       validTo: offer.validTo.slice(0, 16),
       usageLimit: offer.usageLimit ? String(offer.usageLimit) : "",
       isActive: offer.isActive,
+      applicableServiceId: offer.applicableServiceId ?? "",
+      applicableItemId: offer.applicableItemId ?? "",
     });
     setIsOpen(true);
   }
@@ -145,6 +181,7 @@ export default function OffersPage() {
                 <tr className="border-b bg-slate-50 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
                   <th className="px-6 py-3">Code</th>
                   <th className="px-6 py-3">Discount</th>
+                  <th className="px-6 py-3">Applies To</th>
                   <th className="px-6 py-3">Min Order</th>
                   <th className="px-6 py-3">Valid Until</th>
                   <th className="px-6 py-3">Usage</th>
@@ -156,7 +193,7 @@ export default function OffersPage() {
                 {isLoading &&
                   Array.from({ length: 4 }).map((_, i) => (
                     <tr key={i} className="border-b">
-                      {Array.from({ length: 7 }).map((_, j) => (
+                      {Array.from({ length: 8 }).map((_, j) => (
                         <td key={j} className="px-6 py-3">
                           <div className="h-4 animate-pulse rounded bg-slate-100" />
                         </td>
@@ -166,95 +203,118 @@ export default function OffersPage() {
                 {!isLoading && offers.length === 0 && (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={8}
                       className="px-6 py-12 text-center text-muted-foreground"
                     >
                       No offers yet. Create one to attract customers.
                     </td>
                   </tr>
                 )}
-                {offers.map((offer) => (
-                  <tr
-                    key={offer.id}
-                    className="border-b last:border-0 hover:bg-slate-50"
-                  >
-                    <td className="px-6 py-3">
-                      <span className="font-mono font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded text-xs">
-                        {offer.code}
-                      </span>
-                      {offer.description && (
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {offer.description}
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-6 py-3 font-semibold">
-                      {offer.discountType === "PERCENTAGE"
-                        ? `${offer.discountValue}%`
-                        : formatCurrency(offer.discountValue)}
-                    </td>
-                    <td className="px-6 py-3">
-                      {offer.minOrderAmount
-                        ? formatCurrency(offer.minOrderAmount)
-                        : "—"}
-                    </td>
-                    <td className="px-6 py-3 text-xs text-slate-500">
-                      {formatDate(offer.validTo)}
-                    </td>
-                    <td className="px-6 py-3 text-sm">
-                      <span className="font-semibold">{offer.usedCount}</span>
-                      {offer.usageLimit && (
-                        <span className="text-muted-foreground">
-                          /{offer.usageLimit}
+                {offers.map((offer) => {
+                  const targetService = offer.applicableServiceId
+                    ? services.find((s) => s.id === offer.applicableServiceId)
+                    : null;
+                  const targetItem = offer.applicableItemId
+                    ? allItems.find((i) => i.id === offer.applicableItemId)
+                    : null;
+                  return (
+                    <tr
+                      key={offer.id}
+                      className="border-b last:border-0 hover:bg-slate-50"
+                    >
+                      <td className="px-6 py-3">
+                        <span className="font-mono font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded text-xs">
+                          {offer.code}
                         </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-3">
-                      <button
-                        onClick={() =>
-                          toggleMutation.mutate({
-                            id: offer.id,
-                            isActive: !offer.isActive,
-                          })
-                        }
-                      >
-                        <Badge
-                          variant={offer.isActive ? "success" : "secondary"}
-                          className="cursor-pointer"
+                        {offer.description && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {offer.description}
+                          </p>
+                        )}
+                      </td>
+                      <td className="px-6 py-3 font-semibold">
+                        {offer.discountType === "PERCENTAGE"
+                          ? `${offer.discountValue}%`
+                          : formatCurrency(offer.discountValue)}
+                      </td>
+                      <td className="px-6 py-3">
+                        {targetService ? (
+                          <Badge variant="outline" className="text-xs">
+                            Service: {targetService.name}
+                          </Badge>
+                        ) : targetItem ? (
+                          <Badge variant="outline" className="text-xs">
+                            Item: {targetItem.name}
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            All orders
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-3">
+                        {offer.minOrderAmount
+                          ? formatCurrency(offer.minOrderAmount)
+                          : "—"}
+                      </td>
+                      <td className="px-6 py-3 text-xs text-slate-500">
+                        {formatDate(offer.validTo)}
+                      </td>
+                      <td className="px-6 py-3 text-sm">
+                        <span className="font-semibold">{offer.usedCount}</span>
+                        {offer.usageLimit && (
+                          <span className="text-muted-foreground">
+                            /{offer.usageLimit}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-3">
+                        <button
+                          onClick={() =>
+                            toggleMutation.mutate({
+                              id: offer.id,
+                              isActive: !offer.isActive,
+                            })
+                          }
                         >
-                          {offer.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </button>
-                    </td>
-                    <td className="px-6 py-3">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => openEdit(offer)}
-                        >
-                          <Pencil size={13} />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => {
-                            if (
-                              confirm(
-                                `Delete offer "${offer.code}"? This cannot be undone.`,
-                              )
-                            ) {
-                              deleteMutation.mutate(offer.id);
-                            }
-                          }}
-                          disabled={deleteMutation.isPending}
-                        >
-                          <Trash2 size={13} />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          <Badge
+                            variant={offer.isActive ? "success" : "secondary"}
+                            className="cursor-pointer"
+                          >
+                            {offer.isActive ? "Active" : "Inactive"}
+                          </Badge>
+                        </button>
+                      </td>
+                      <td className="px-6 py-3">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openEdit(offer)}
+                          >
+                            <Pencil size={13} />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => {
+                              if (
+                                confirm(
+                                  `Delete offer "${offer.code}"? This cannot be undone.`,
+                                )
+                              ) {
+                                deleteMutation.mutate(offer.id);
+                              }
+                            }}
+                            disabled={deleteMutation.isPending}
+                          >
+                            <Trash2 size={13} />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -421,6 +481,60 @@ export default function OffersPage() {
                 className="h-4 w-4 rounded border-input accent-indigo-600"
               />
               <Label htmlFor="offer-active">Active</Label>
+            </div>
+
+            {/* ── Targeting ── */}
+            <div className="space-y-1.5 col-span-2 border-t pt-4 mt-2">
+              <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                Apply offer to (optional)
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Leave both empty for a global offer. Select one to restrict.
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Specific Service</Label>
+              <Select
+                value={form.applicableServiceId}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    applicableServiceId: e.target.value,
+                    applicableItemId: e.target.value
+                      ? ""
+                      : form.applicableItemId,
+                  })
+                }
+              >
+                <option value="">— All services —</option>
+                {services.map((svc) => (
+                  <option key={svc.id} value={svc.id}>
+                    {svc.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Specific Item</Label>
+              <Select
+                value={form.applicableItemId}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    applicableItemId: e.target.value,
+                    applicableServiceId: e.target.value
+                      ? ""
+                      : form.applicableServiceId,
+                  })
+                }
+              >
+                <option value="">— All items —</option>
+                {allItems.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </Select>
             </div>
           </div>
 

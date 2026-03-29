@@ -5,11 +5,11 @@ import { AppError } from "../middleware/errorHandler";
 
 // Resolved type that includes items so controllers are fully typed
 export type ServiceWithItems = Prisma.ServiceGetPayload<{
-  include: { items: true };
+  include: { items: { include: { item: true } } };
 }>;
 
 const WITH_ITEMS = {
-  items: { orderBy: { name: "asc" as const } },
+  items: { orderBy: { name: "asc" as const }, include: { item: true } },
 } satisfies Prisma.ServiceInclude;
 
 export async function list(params: {
@@ -60,12 +60,14 @@ export async function findById(id: string): Promise<ServiceWithItems> {
 export async function create(data: {
   name: string;
   description?: string;
+  imageUrl?: string;
   isActive?: boolean;
 }): Promise<ServiceWithItems> {
   const service = await prisma.service.create({
     data: {
       name: data.name,
       description: data.description,
+      imageUrl: data.imageUrl || null,
       isActive: data.isActive,
     },
     include: WITH_ITEMS,
@@ -76,7 +78,12 @@ export async function create(data: {
 
 export async function update(
   id: string,
-  data: { name?: string; description?: string; isActive?: boolean },
+  data: {
+    name?: string;
+    description?: string;
+    imageUrl?: string;
+    isActive?: boolean;
+  },
 ): Promise<ServiceWithItems> {
   const existing = await prisma.service.findUnique({ where: { id } });
   if (!existing) throw new AppError("Service not found", 404);

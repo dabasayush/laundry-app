@@ -1,176 +1,121 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import {
-  Banknote,
-  CheckCircle2,
-  IndianRupee,
-  ShoppingBag,
-  TrendingUp,
-  Clock,
-} from "lucide-react";
+import { DollarSign, Users, Package, Settings } from "lucide-react";
 import { adminApi } from "../../services/adminApi";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../../components/ui/card";
-import { Badge } from "../../components/ui/badge";
-import { StatusBadge } from "../../components/shared/StatusBadge";
-import { formatCurrency, formatDateTime, truncateId } from "../../lib/utils";
-import type { TodaySnapshot, Order, OrderStatus } from "../../types";
+import StatCard from "../../components/dashboard/StatCard";
+import RevenueTable from "../../components/dashboard/RevenueTable";
+import OverviewCard from "../../components/dashboard/OverviewCard";
+import { formatCurrency } from "../../lib/utils";
+import type { TodaySnapshot } from "../../types";
 
-function KpiCard({
-  title,
-  value,
-  sub,
-  icon: Icon,
-  color,
-}: {
-  title: string;
-  value: string;
-  sub?: string;
-  icon: React.ElementType;
-  color: string;
-}) {
-  return (
-    <Card>
-      <CardContent className="flex items-center gap-4 pt-5 pb-5">
-        <div className={`rounded-xl p-2.5 ${color}`}>
-          <Icon size={20} className="text-white" />
-        </div>
-        <div>
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{title}</p>
-          <p className="text-2xl font-bold text-slate-900 leading-tight mt-0.5">{value}</p>
-          {sub && <p className="text-xs text-slate-400 mt-0.5">{sub}</p>}
-        </div>
-      </CardContent>
-    </Card>
-  );
+type DashboardMetrics = {
+  totalOrders?: number;
+  totalRevenue?: number;
+  totalCustomers?: number;
+  activeDrivers?: number;
+};
+
+function safeNumber(value: unknown, fallback = 0): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
 export default function DashboardPage() {
-  const { data: snap, isLoading } = useQuery<TodaySnapshot>({
+  const { data: snap } = useQuery<TodaySnapshot>({
     queryKey: ["analytics", "today"],
     queryFn: adminApi.getTodaySnapshot,
   });
 
-  const { data: ordersRes } = useQuery({
-    queryKey: ["orders", { page: 1, limit: 8 }],
-    queryFn: () => adminApi.listOrders({ page: 1, limit: 8 }),
+  const { data: dashboardMetrics } = useQuery<DashboardMetrics>({
+    queryKey: ["analytics", "dashboard"],
+    queryFn: adminApi.getDashboardMetrics,
   });
 
-  const recentOrders: Order[] = ordersRes?.data ?? [];
+  const { data: customersRes } = useQuery({
+    queryKey: ["users", "customers", "count"],
+    queryFn: () => adminApi.listUsers({ role: "CUSTOMER", page: 1, limit: 1 }),
+  });
+
+  const { data: ordersRes } = useQuery({
+    queryKey: ["orders", { page: 1, limit: 10 }],
+    queryFn: () => adminApi.listOrders({ page: 1, limit: 10 }),
+  });
+
+  const totalRevenue = safeNumber(
+    dashboardMetrics?.totalRevenue,
+    snap?.todayRevenue ?? 0,
+  );
+  const totalCustomers = safeNumber(
+    dashboardMetrics?.totalCustomers,
+    customersRes?.meta?.total ?? 0,
+  );
+
+  const stats = [
+    {
+      label: "INCOME",
+      value: formatCurrency(totalRevenue),
+      icon: DollarSign,
+      color: "pink" as const,
+    },
+    {
+      label: "USERS",
+      value: totalCustomers.toString(),
+      icon: Users,
+      color: "yellow" as const,
+    },
+    { label: "PRODUCTS", value: "128", icon: Package, color: "blue" as const },
+    { label: "SERVICES", value: "6", icon: Settings, color: "teal" as const },
+  ];
+
+  // Prepare revenue data for table
+  const revenueData =
+    ordersRes?.data?.map((order) => ({
+      id: order.id,
+      deliveryDate: new Date(order.createdAt).toLocaleDateString("en-IN"),
+      orderBy: order.user?.name || order.user?.phone || "Guest",
+      quantity: 1,
+      total: order.finalAmount,
+    })) ?? [];
+
+  const totalRevenueFromOrders = revenueData.reduce(
+    (sum, item) => sum + item.total,
+    0,
+  );
+
+  // Overview stats
+  const overviewStats = {
+    users: totalCustomers,
+    orders: ordersRes?.meta?.total ?? 0,
+    pending: snap?.pendingOrders ?? 0,
+    onProgress: 0, // This would come from order status counts
+    delivered: snap?.completedOrders ?? 0,
+    canceled: 0, // This would come from order status counts
+  };
 
   return (
-    <main className="p-6 space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-slate-900">Dashboard</h1>
-        <p className="text-sm text-slate-400 mt-0.5">
-          {snap?.date
-            ? new Date(snap.date).toLocaleDateString("en-IN", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })
-            : "Today's overview"}
-        </p>
+    <div className="space-y-6">
+      {/* Stat Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((stat) => (
+          <StatCard key={stat.label} {...stat} />
+        ))}
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard
-          title="Today's Revenue"
-          value={isLoading ? "—" : formatCurrency(snap?.todayRevenue ?? 0)}
-          icon={IndianRupee}
-          color="bg-indigo-500"
-        />
-        <KpiCard
-          title="Orders Today"
-          value={isLoading ? "—" : String(snap?.ordersToday ?? 0)}
-          sub={`${snap?.pendingOrders ?? 0} pending`}
-          icon={ShoppingBag}
-          color="bg-sky-500"
-        />
-        <KpiCard
-          title="Completed"
-          value={isLoading ? "—" : String(snap?.completedOrders ?? 0)}
-          sub={`${snap?.cancelledOrders ?? 0} cancelled`}
-          icon={CheckCircle2}
-          color="bg-emerald-500"
-        />
-        <KpiCard
-          title="Driver Cash Pending"
-          value={
-            isLoading
-              ? "—"
-              : formatCurrency(snap?.driverCashPending?.totalAmount ?? 0)
-          }
-          sub={`${snap?.driverCashPending?.orderCount ?? 0} orders`}
-          icon={Banknote}
-          color="bg-amber-500"
-        />
-      </div>
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Revenue Section */}
+        <div className="lg:col-span-2">
+          <RevenueTable
+            data={revenueData}
+            totalRevenue={totalRevenueFromOrders}
+          />
+        </div>
 
-      {/* Recent Orders */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold text-slate-700">
-            Recent Orders
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-slate-50/70 text-left text-xs font-semibold text-slate-400 uppercase tracking-wide">
-                  <th className="px-6 py-3">Order ID</th>
-                  <th className="px-6 py-3">Customer</th>
-                  <th className="px-6 py-3">Amount</th>
-                  <th className="px-6 py-3">Status</th>
-                  <th className="px-6 py-3">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentOrders.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="px-6 py-8 text-center text-muted-foreground"
-                    >
-                      No orders yet today
-                    </td>
-                  </tr>
-                )}
-                {recentOrders.map((order) => (
-                  <tr
-                    key={order.id}
-                    className="border-b last:border-0 hover:bg-slate-50"
-                  >
-                    <td className="px-6 py-3 font-mono text-xs text-slate-500">
-                      {truncateId(order.id)}
-                    </td>
-                    <td className="px-6 py-3 font-medium text-slate-800">
-                      {order.user?.name ?? order.user?.phone}
-                    </td>
-                    <td className="px-6 py-3 font-semibold">
-                      {formatCurrency(order.finalAmount)}
-                    </td>
-                    <td className="px-6 py-3">
-                      <StatusBadge status={order.status as OrderStatus} />
-                    </td>
-                    <td className="px-6 py-3 text-slate-500">
-                      {formatDateTime(order.createdAt)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-    </main>
+        {/* Overview Card */}
+        <div>
+          <OverviewCard stats={overviewStats} />
+        </div>
+      </div>
+    </div>
   );
 }

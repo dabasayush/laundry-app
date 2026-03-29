@@ -46,6 +46,12 @@ export interface ServiceItem {
   isActive: boolean;
   serviceId: string;
   service?: Service;
+  item?: {
+    id: string;
+    name: string;
+    imageUrl: string | null;
+    description: string | null;
+  } | null;
 }
 
 export interface OrderItem {

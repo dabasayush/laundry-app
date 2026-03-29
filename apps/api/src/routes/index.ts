@@ -10,6 +10,8 @@ import notificationRoutes from "./notification.routes";
 import analyticsRoutes from "./analytics.routes";
 import offerRoutes from "./offer.routes";
 import marketingRoutes from "./marketing.routes";
+import productRoutes from "./product.routes";
+import itemRoutes from "./item.routes";
 
 const router = Router();
 
@@ -18,11 +20,13 @@ router.use("/users", userRoutes);
 router.use("/orders", orderRoutes);
 router.use("/services", serviceRoutes);
 router.use("/service-items", serviceItemRoutes);
+router.use("/items", itemRoutes);
 router.use("/slots", slotRoutes);
 router.use("/payments", paymentRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/analytics", analyticsRoutes);
 router.use("/offers", offerRoutes);
 router.use("/marketing", marketingRoutes);
+router.use("/products", productRoutes);
 
 export default router;

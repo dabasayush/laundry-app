@@ -37,6 +37,8 @@ const offerBaseObject = z.object({
     .positive()
     .optional(),
   isActive: z.boolean().default(true),
+  applicableServiceId: z.string().uuid().optional().nullable(),
+  applicableItemId: z.string().uuid().optional().nullable(),
 });
 
 // ── Create ─────────────────────────────────────────────────────────────────────

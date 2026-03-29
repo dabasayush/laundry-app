@@ -1,7 +1,7 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { Bell, User, ChevronRight } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Bell, LogOut } from "lucide-react";
 
 const PAGE_TITLES: Record<string, string> = {
   "/": "Dashboard",
@@ -9,33 +9,50 @@ const PAGE_TITLES: Record<string, string> = {
   "/customers": "Customers",
   "/drivers": "Drivers",
   "/services": "Services",
+  "/products": "Products",
   "/offers": "Offers",
   "/marketing": "Marketing",
   "/analytics": "Analytics",
+  "/banners": "App Banners",
+  "/contacts": "Contacts",
+  "/admins": "Admins",
+  "/profile": "Profile",
 };
 
 export default function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const title = PAGE_TITLES[pathname] ?? "Dashboard";
 
+  const handleLogout = () => {
+    sessionStorage.removeItem("admin_access_token");
+    router.push("/login");
+  };
+
   return (
-    <header className="h-14 shrink-0 sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white/95 backdrop-blur-sm px-6">
-      <div className="flex items-center gap-1.5 text-sm">
-        <span className="text-slate-400 font-medium">Admin</span>
-        <ChevronRight size={13} className="text-slate-300" />
-        <span className="font-semibold text-slate-800">{title}</span>
+    <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+      <div className="flex items-center gap-2 text-gray-600">
+        <span className="text-sm font-medium">Dashboard</span>
+        <span className="text-gray-400">/</span>
+        <span className="text-sm text-gray-500">{title}</span>
       </div>
 
-      <div className="flex items-center gap-1">
-        <button className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors">
-          <Bell size={16} />
+      <div className="flex items-center gap-4">
+        {/* Notification Bell */}
+        <button className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+          <Bell size={20} />
+          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
         </button>
-        <div className="ml-1 pl-2 border-l border-slate-200 flex items-center gap-2">
-          <div className="h-7 w-7 rounded-full bg-indigo-600 flex items-center justify-center shadow-sm shadow-indigo-200">
-            <User size={12} className="text-white" />
-          </div>
-          <span className="text-sm font-medium text-slate-700">Admin</span>
-        </div>
+
+        {/* Logout Button */}
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors"
+          title="Logout"
+        >
+          <LogOut size={20} />
+          <span className="text-sm">Logout</span>
+        </button>
       </div>
     </header>
   );

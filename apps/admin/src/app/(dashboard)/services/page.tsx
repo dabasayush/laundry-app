@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import {
   Plus,
   Pencil,
@@ -30,15 +31,26 @@ import {
   DialogTitle,
   DialogFooter,
 } from "../../../components/ui/dialog";
-import { formatCurrency, formatDate } from "../../../lib/utils";
+import { formatCurrency } from "../../../lib/utils";
+import { ImageUpload } from "../../../components/shared/ImageUpload";
 import type { Service, ServiceItem } from "../../../types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ServiceForm = { name: string; description: string; isActive: boolean };
+type ServiceForm = {
+  name: string;
+  description: string;
+  imageUrl: string;
+  isActive: boolean;
+};
 type ItemForm = { name: string; price: string; isActive: boolean };
 
-const EMPTY_SVC: ServiceForm = { name: "", description: "", isActive: true };
+const EMPTY_SVC: ServiceForm = {
+  name: "",
+  description: "",
+  imageUrl: "",
+  isActive: true,
+};
 const EMPTY_ITEM: ItemForm = { name: "", price: "", isActive: true };
 
 // ─── Service Form Modal ───────────────────────────────────────────────────────
@@ -88,6 +100,12 @@ function ServiceModal({
               }
             />
           </div>
+          <ImageUpload
+            value={form.imageUrl}
+            onChange={(url) => onChange({ ...form, imageUrl: url })}
+            folder="laundry-app/services"
+            label="Service Image (optional)"
+          />
           <div className="flex items-center gap-3">
             <input
               type="checkbox"
@@ -232,7 +250,14 @@ function ItemsPanel({ service }: { service: Service }) {
           }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["service-items", service.id] });
+      toast.success(editingItem ? "Item updated" : "Item added");
       setItemModal(false);
+    },
+    onError: (err: unknown) => {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "Failed to save item";
+      toast.error(msg);
     },
   });
 
@@ -241,12 +266,16 @@ function ItemsPanel({ service }: { service: Service }) {
       adminApi.updateServiceItem(id, { isActive }),
     onSuccess: () =>
       qc.invalidateQueries({ queryKey: ["service-items", service.id] }),
+    onError: () => toast.error("Failed to update item"),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => adminApi.deleteServiceItem(id),
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["service-items", service.id] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["service-items", service.id] });
+      toast.success("Item deleted");
+    },
+    onError: () => toast.error("Failed to delete item"),
   });
 
   function openCreate() {
@@ -280,10 +309,7 @@ function ItemsPanel({ service }: { service: Service }) {
                 </p>
               )}
             </div>
-            <Button size="sm" onClick={openCreate}>
-              <Plus size={14} className="mr-1.5" />
-              Add Item
-            </Button>
+            {/* Removed Add Item button as per request */}
           </div>
         </CardHeader>
         <CardContent className="p-0 flex-1 overflow-auto">
@@ -296,24 +322,11 @@ function ItemsPanel({ service }: { service: Service }) {
                 />
               ))}
             </div>
-          ) : items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-48 gap-3 text-center">
-              <Package size={36} className="text-slate-300" />
-              <div>
-                <p className="font-medium text-slate-500">No items yet</p>
-                <p className="text-sm text-muted-foreground">
-                  Add items like Shirt, Pant, Suit…
-                </p>
-              </div>
-              <Button size="sm" variant="outline" onClick={openCreate}>
-                <Plus size={14} className="mr-1.5" />
-                Add First Item
-              </Button>
-            </div>
-          ) : (
+          ) : items.length === 0 ? null : (
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-slate-50 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
+                  <th className="px-6 py-3">Image</th>
                   <th className="px-6 py-3">Item Name</th>
                   <th className="px-6 py-3">Price</th>
                   <th className="px-6 py-3">Status</th>
@@ -326,6 +339,19 @@ function ItemsPanel({ service }: { service: Service }) {
                     key={item.id}
                     className="border-b last:border-0 hover:bg-slate-50 group"
                   >
+                    <td className="px-6 py-3">
+                      {item.item?.imageUrl ? (
+                        <img
+                          src={item.item.imageUrl}
+                          alt={item.name}
+                          className="w-8 h-8 rounded object-cover border"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center">
+                          <Package size={14} className="text-slate-400" />
+                        </div>
+                      )}
+                    </td>
                     <td className="px-6 py-3 font-medium text-slate-800">
                       {item.name}
                     </td>
@@ -535,9 +561,13 @@ export default function ServicesPage() {
   // Selected service for items panel
   const [selectedService, setSelectedService] = useState<Service | null>(null);
 
-  const { data: services = [], isLoading } = useQuery<Service[]>({
+  const {
+    data: services = [],
+    isLoading,
+    isError,
+  } = useQuery<Service[]>({
     queryKey: ["services"],
-    queryFn: adminApi.listServices,
+    queryFn: () => adminApi.listServices(),
   });
 
   const saveSvcMutation = useMutation({
@@ -546,11 +576,13 @@ export default function ServicesPage() {
         ? adminApi.updateService(editingSvc.id, {
             name: svcForm.name.trim(),
             description: svcForm.description.trim() || undefined,
+            imageUrl: svcForm.imageUrl || undefined,
             isActive: svcForm.isActive,
           })
         : adminApi.createService({
             name: svcForm.name.trim(),
             description: svcForm.description.trim() || undefined,
+            imageUrl: svcForm.imageUrl || undefined,
             isActive: svcForm.isActive,
           }),
     onSuccess: (updated) => {
@@ -559,7 +591,14 @@ export default function ServicesPage() {
       if (editingSvc && selectedService?.id === editingSvc.id) {
         setSelectedService(updated);
       }
+      toast.success(editingSvc ? "Service updated" : "Service created");
       setSvcModal(false);
+    },
+    onError: (err: unknown) => {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "Failed to save service";
+      toast.error(msg);
     },
   });
 
@@ -568,7 +607,9 @@ export default function ServicesPage() {
     onSuccess: (_, deletedId) => {
       qc.invalidateQueries({ queryKey: ["services"] });
       if (selectedService?.id === deletedId) setSelectedService(null);
+      toast.success("Service deleted");
     },
+    onError: () => toast.error("Failed to delete service"),
   });
 
   function openCreateSvc() {
@@ -582,6 +623,7 @@ export default function ServicesPage() {
     setSvcForm({
       name: svc.name,
       description: svc.description ?? "",
+      imageUrl: svc.imageUrl ?? "",
       isActive: svc.isActive,
     });
     setSvcModal(true);
@@ -598,7 +640,7 @@ export default function ServicesPage() {
   }
 
   return (
-    <main className="flex h-[calc(100vh-4rem)] flex-col p-6 gap-4">
+    <div className="flex flex-col gap-4 h-full">
       {/* Header */}
       <div className="flex items-center justify-between shrink-0">
         <div>
@@ -617,8 +659,16 @@ export default function ServicesPage() {
         </div>
       </div>
 
+      {/* Error state */}
+      {isError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          Failed to load services. Check that the API server is running and you
+          are logged in as an admin.
+        </div>
+      )}
+
       {/* Split Layout */}
-      <div className="flex gap-5 min-h-0 flex-1">
+      <div className="flex items-center justify-between min-h-0">
         {/* Left: Services List */}
         <ServicesPanel
           services={services}
@@ -631,34 +681,11 @@ export default function ServicesPage() {
         />
 
         {/* Right: Items Panel */}
-        <div className="flex-1 min-w-0">
+        {/* <div className="flex-1 min-w-0">
           {selectedService ? (
             <ItemsPanel key={selectedService.id} service={selectedService} />
-          ) : (
-            <Card className="flex-1 h-full">
-              <CardContent className="flex flex-col items-center justify-center h-full gap-4 text-center">
-                <div className="rounded-full bg-slate-100 p-5">
-                  <IndianRupee size={28} className="text-slate-400" />
-                </div>
-                <div>
-                  <p className="font-semibold text-slate-600">
-                    Select a service to manage its items
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Click any service on the left to view, add, or edit its
-                    items like Shirt, Pant, Suit…
-                  </p>
-                </div>
-                {services.length === 0 && !isLoading && (
-                  <Button variant="outline" onClick={openCreateSvc}>
-                    <Plus size={14} className="mr-2" />
-                    Create Your First Service
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </div>
+          ) : null}
+        </div> */}
       </div>
 
       {/* Service Modal */}
@@ -671,6 +698,6 @@ export default function ServicesPage() {
         onSave={() => saveSvcMutation.mutate()}
         isPending={saveSvcMutation.isPending}
       />
-    </main>
+    </div>
   );
 }

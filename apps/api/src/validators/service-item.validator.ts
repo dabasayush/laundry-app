@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const createServiceItemSchema = z.object({
   serviceId: z.string().uuid("serviceId must be a valid UUID"),
+  itemId: z.string().uuid("itemId must be a valid UUID").optional(),
   name: z.string().trim().min(1).max(100),
   price: z
     .number({ invalid_type_error: "price must be a number" })

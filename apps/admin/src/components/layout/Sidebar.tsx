@@ -3,27 +3,43 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutDashboard,
-  ShoppingBag,
+  Home,
+  ShoppingCart,
+  Package,
+  ImageIcon,
   Users,
   Truck,
-  Tag,
-  Megaphone,
-  BarChart3,
-  Percent,
+  Mail,
+  Lock,
+  User,
+  Globe,
   LogOut,
+  BarChart3,
+  Box,
+  Tag,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
-const NAV_ITEMS = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/orders", label: "Orders", icon: ShoppingBag },
-  { href: "/customers", label: "Customers", icon: Users },
-  { href: "/drivers", label: "Drivers", icon: Truck },
-  { href: "/services", label: "Services", icon: Tag },
-  { href: "/offers", label: "Offers", icon: Percent },
-  { href: "/marketing", label: "Marketing", icon: Megaphone },
-  { href: "/analytics", label: "Analytics", icon: BarChart3 },
+interface MenuItem {
+  label: string;
+  icon: React.ReactNode;
+  href: string;
+}
+
+const menuItems: MenuItem[] = [
+  { label: "Dashboard", icon: <Home size={20} />, href: "/" },
+  { label: "Orders", icon: <ShoppingCart size={20} />, href: "/orders" },
+  { label: "Services", icon: <Package size={20} />, href: "/services" },
+  { label: "Items", icon: <Box size={20} />, href: "/items" },
+  { label: "Products", icon: <Package size={20} />, href: "/products" },
+  { label: "Offers", icon: <Tag size={20} />, href: "/offers" },
+  { label: "App Banners", icon: <ImageIcon size={20} />, href: "/banners" },
+  { label: "Customer", icon: <Users size={20} />, href: "/customers" },
+  { label: "Drivers", icon: <Truck size={20} />, href: "/drivers" },
+  { label: "Contacts", icon: <Mail size={20} />, href: "/contacts" },
+  { label: "Marketing", icon: <Mail size={20} />, href: "/marketing" },
+  { label: "Admins", icon: <Lock size={20} />, href: "/admins" },
+  { label: "Profile", icon: <User size={20} />, href: "/profile" },
+  { label: "Analytics", icon: <BarChart3 size={20} />, href: "/analytics" },
 ];
 
 export default function Sidebar() {
@@ -36,57 +52,71 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="w-[220px] shrink-0 border-r border-slate-200 bg-white flex flex-col h-full">
-      {/* Brand */}
-      <div className="px-4 py-4 border-b border-slate-100">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0 shadow-sm shadow-indigo-200">
-            <span className="text-sm leading-none">🧺</span>
+    <aside className="w-64 bg-white border-r border-gray-200 overflow-y-auto flex flex-col">
+      {/* Logo Section */}
+      <div className="p-6 border-b border-gray-200">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-pink-400 to-pink-600 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-lg">L</span>
           </div>
-          <div>
-            <p className="text-sm font-semibold text-slate-900 leading-tight">LaundryOps</p>
-            <p className="text-[10px] text-slate-400 leading-tight mt-0.5">Admin Console</p>
-          </div>
+          <span className="font-bold text-green-600 text-lg">LAUNDRY</span>
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
-        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-          const isActive = pathname === href;
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150",
-                isActive
-                  ? "bg-indigo-50 text-indigo-700"
-                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-800",
-              )}
-            >
-              <Icon
-                size={15}
-                className={cn(
-                  "shrink-0",
-                  isActive ? "text-indigo-600" : "text-slate-400",
-                )}
-              />
-              {label}
-            </Link>
-          );
-        })}
+      {/* Menu Items */}
+      <nav className="flex-1 p-4">
+        <ul className="space-y-2">
+          {menuItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <li key={item.label}>
+                <Link
+                  href={item.href}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    isActive
+                      ? "bg-gray-100 text-gray-900"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  <span
+                    className={isActive ? "text-gray-900" : "text-gray-600"}
+                  >
+                    {item.icon}
+                  </span>
+                  <span className="text-sm font-medium">{item.label}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       </nav>
 
-      {/* Sign out */}
-      <div className="px-2 py-3 border-t border-slate-100">
+      {/* Footer Section */}
+      <div className="border-t border-gray-200 p-4 space-y-2">
         <button
           onClick={handleSignOut}
-          className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-sm font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all duration-150"
+          className="flex items-center gap-3 px-4 py-3 w-full text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
         >
-          <LogOut size={15} className="shrink-0" />
-          Sign Out
+          <LogOut size={20} />
+          <span className="text-sm font-medium">Logout</span>
         </button>
+
+        {/* Language & User Section */}
+        <div className="px-4 py-3 border-t border-gray-200 mt-2">
+          <div className="flex items-center gap-3 mb-3">
+            <Globe size={16} className="text-gray-600" />
+            <span className="text-xs text-gray-600">English</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+              <User size={16} className="text-gray-600" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-700">Admin User</p>
+              <p className="text-xs text-gray-500">admin@laundry.com</p>
+            </div>
+          </div>
+        </div>
       </div>
     </aside>
   );

@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  Image,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -30,13 +31,22 @@ function ServiceItemRow({ item }: { item: ServiceItem }) {
   const { addItem, items, updateQuantity, removeItem } = useCartStore();
   const cartEntry = items.find((i) => i.serviceItem.id === item.id);
   const qty = cartEntry?.quantity ?? 0;
+  const imageUrl = item.item?.imageUrl;
 
   return (
     <View style={styles.itemRow}>
+      {imageUrl ? (
+        <Image source={{ uri: imageUrl }} style={styles.itemImage} />
+      ) : (
+        <View style={styles.itemImagePlaceholder}>
+          <Ionicons name="shirt-outline" size={20} color={COLORS.textMuted} />
+        </View>
+      )}
       <View style={styles.itemInfo}>
         <Text style={styles.itemName}>{item.name}</Text>
         <Text style={styles.itemUnit}>
-          ₹{item.price.toFixed(2)} / {item.unit}
+          ₹{Number(item.price).toFixed(2)}
+          {item.unit ? ` / ${item.unit}` : ""}
         </Text>
       </View>
       {qty === 0 ? (
@@ -201,6 +211,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     justifyContent: "space-between",
+  },
+  itemImage: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    marginRight: 12,
+  },
+  itemImagePlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: COLORS.primaryLight,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
   },
   itemInfo: { flex: 1, marginRight: 12 },
   itemName: { fontSize: 15, fontWeight: "600", color: COLORS.text },

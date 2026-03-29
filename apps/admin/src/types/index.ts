@@ -73,7 +73,26 @@ export interface ServiceItem {
   unit: string;
   isActive: boolean;
   serviceId: string;
+  itemId?: string | null;
   service?: { id: string; name: string };
+  item?: Item | null;
+}
+
+export interface Item {
+  id: string;
+  name: string;
+  description: string | null;
+  imageUrl: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  serviceItems?: Array<{
+    id: string;
+    serviceId: string;
+    price: number;
+    isActive: boolean;
+    service: { id: string; name: string };
+  }>;
 }
 
 export interface Service {
@@ -134,6 +153,8 @@ export interface Offer {
   usageLimit: number | null;
   usedCount: number;
   isActive: boolean;
+  applicableServiceId: string | null;
+  applicableItemId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -197,4 +218,18 @@ export interface DriverCashReport {
 export interface OrderTrendPoint {
   date: string;
   count: number;
+}
+
+// ── Product ──────────────────────────────────────────────────────────────────
+
+export interface Product {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  imageUrl: string | null;
+  stock: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }

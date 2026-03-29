@@ -24,6 +24,8 @@ const COLORS = {
 };
 
 function ServiceCard({ item }: { item: Service }) {
+  const activeItems = (item.items ?? []).filter((i) => i.isActive);
+
   return (
     <TouchableOpacity
       style={styles.card}
@@ -46,6 +48,29 @@ function ServiceCard({ item }: { item: Service }) {
             {item.description}
           </Text>
         ) : null}
+        {activeItems.length > 0 && (
+          <View style={styles.itemChips}>
+            {activeItems.slice(0, 4).map((si) => (
+              <View key={si.id} style={styles.itemChip}>
+                {si.item?.imageUrl ? (
+                  <Image
+                    source={{ uri: si.item.imageUrl }}
+                    style={styles.chipImage}
+                  />
+                ) : null}
+                <Text style={styles.chipText}>{si.name}</Text>
+                <Text style={styles.chipPrice}>₹{Number(si.price)}</Text>
+              </View>
+            ))}
+            {activeItems.length > 4 && (
+              <View style={styles.itemChip}>
+                <Text style={styles.chipText}>
+                  +{activeItems.length - 4} more
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
       </View>
       <Ionicons name="chevron-forward" size={20} color={COLORS.textMuted} />
     </TouchableOpacity>
@@ -136,6 +161,35 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     marginTop: 4,
     lineHeight: 18,
+  },
+  itemChips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 8,
+  },
+  itemChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.primaryLight,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    gap: 4,
+  },
+  chipImage: {
+    width: 16,
+    height: 16,
+    borderRadius: 4,
+  },
+  chipText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: COLORS.primary,
+  },
+  chipPrice: {
+    fontSize: 11,
+    color: COLORS.textMuted,
   },
   center: {
     flex: 1,
