@@ -29,13 +29,15 @@ const COLORS = {
 function CartRow({ item }: { item: CartItem }) {
   const { updateQuantity, removeItem } = useCartStore();
   const { serviceItem, quantity } = item;
+  const price = Number(serviceItem.price ?? 0);
+  const subtotal = price * quantity;
 
   return (
     <View style={styles.row}>
       <View style={styles.rowLeft}>
         <Text style={styles.itemName}>{serviceItem.name}</Text>
         <Text style={styles.itemUnit}>per {serviceItem.unit}</Text>
-        <Text style={styles.itemPrice}>₹{serviceItem.price.toFixed(2)}</Text>
+        <Text style={styles.itemPrice}>₹{price.toFixed(2)}</Text>
       </View>
       <View style={styles.rowRight}>
         <View style={styles.qtyControl}>
@@ -54,7 +56,7 @@ function CartRow({ item }: { item: CartItem }) {
           </TouchableOpacity>
         </View>
         <Text style={styles.subtotal}>
-          ₹{(serviceItem.price * quantity).toFixed(2)}
+          ₹{subtotal.toFixed(2)}
         </Text>
         <TouchableOpacity
           style={styles.removeBtn}

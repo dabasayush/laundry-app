@@ -50,6 +50,7 @@ export const serviceItemApi = {
 export const slotApi = {
   getAvailability: (date: string) =>
     apiClient.get<{ data: Slot[] }>(`/slots/availability?date=${date}`),
+  getConfig: () => apiClient.get("/slots/config"),
 };
 
 // ── Orders ────────────────────────────────────────────────────────────────────

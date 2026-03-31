@@ -11,6 +11,7 @@ export type OrderStatus =
 
 export type PaymentStatus = "PENDING" | "PAID" | "FAILED" | "REFUNDED";
 export type PaymentMethod = "CASH" | "UPI" | "CARD" | "WALLET";
+export type PickupOption = "MORNING" | "EVENING" | "INSTANT";
 
 export interface User {
   id: string;
@@ -83,6 +84,8 @@ export interface Order {
   discountAmount: number;
   finalAmount: number;
   notes: string | null;
+  pickupOption?: PickupOption;
+  pickupSurcharge?: number;
   user?: User;
   driver?: Driver;
   items: OrderItem[];
@@ -92,8 +95,13 @@ export interface Order {
 
 export interface Slot {
   id: string;
+  code: PickupOption;
+  label: string;
   date: string;
-  time: string;
+  startTime: string;
+  endTime: string;
+  surcharge: number;
+  type: "PICKUP";
   available: boolean;
 }
 

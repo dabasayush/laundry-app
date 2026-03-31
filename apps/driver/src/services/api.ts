@@ -44,6 +44,14 @@ export const orderApi = {
   updateStatus: (id: string, status: OrderStatus) =>
     apiClient.patch<{ data: Order }>(`/orders/${id}/status`, { status }),
 
+  batchUpdateStatus: (orderIds: string[], status: OrderStatus) =>
+    apiClient.patch<{
+      data: {
+        updated: number;
+        failed: Array<{ orderId: string; reason: string }>;
+      };
+    }>(`/orders/batch-status`, { orderIds, status }),
+
   /**
    * Mark cash/UPI payment as collected.
    * Requires order.status === DELIVERED and order.paymentStatus === PENDING.

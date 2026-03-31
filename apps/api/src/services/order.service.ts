@@ -5,6 +5,7 @@ import { cacheGet, cacheSet, cacheDel, CacheKeys, TTL } from "../utils/cache";
 import { AppError } from "../middleware/errorHandler";
 import type { OrderStatus, PaymentMethod } from "@prisma/client";
 import { resolveNamedOffer, resolveBestOffer } from "./offer.service";
+import { getPickupConfig } from "./slot.service";
 
 // ── Shared include shape — single source of truth ────────────────────────────
 
@@ -46,6 +47,8 @@ export async function createOrder(data: {
   addressId?: string;
   offerId?: string;
   paymentMethod: PaymentMethod;
+  pickupOption?: "MORNING" | "EVENING" | "INSTANT";
+  pickupAddressText?: string;
   notes?: string;
   items: Array<{ serviceItemId: string; quantity: number }>;
 }): Promise<OrderWithDetails> {
@@ -94,7 +97,28 @@ export async function createOrder(data: {
       }
     }
 
-    const finalAmount = totalAmount.sub(discountAmount);
+    const pickupOption = data.pickupOption ?? "MORNING";
+    const pickupCfg = await getPickupConfig();
+    const pickupSurcharge =
+      pickupOption === "INSTANT" && pickupCfg.instantEnabled
+        ? new Decimal(pickupCfg.instantFee)
+        : new Decimal(0);
+
+    const pickupMeta = [
+      `pickup=${pickupOption}`,
+      pickupSurcharge.gt(0) ? `instant_fee=${pickupSurcharge.toFixed(2)}` : "",
+      data.pickupAddressText?.trim()
+        ? `pickup_address=${data.pickupAddressText.trim()}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join(" | ");
+
+    const finalAmount = totalAmount.sub(discountAmount).add(pickupSurcharge);
+    const combinedNotes = [data.notes?.trim(), pickupMeta]
+      .filter(Boolean)
+      .join("\n")
+      .slice(0, 500);
 
     // 3. Create order with items
     const order = await tx.order.create({
@@ -103,7 +127,7 @@ export async function createOrder(data: {
         addressId: data.addressId,
         offerId: resolvedOfferId,
         paymentMethod: data.paymentMethod,
-        notes: data.notes,
+        notes: combinedNotes || undefined,
         totalAmount,
         discountAmount,
         finalAmount,
@@ -222,6 +246,32 @@ export async function updateStatus(
 
   await cacheDel(CacheKeys.order(id));
   return updated as OrderWithDetails;
+}
+
+export async function batchUpdateStatus(params: {
+  orderIds: string[];
+  status: OrderStatus;
+  driverId?: string;
+}): Promise<{
+  updated: number;
+  failed: Array<{ orderId: string; reason: string }>;
+}> {
+  const failed: Array<{ orderId: string; reason: string }> = [];
+  let updated = 0;
+
+  for (const orderId of params.orderIds) {
+    try {
+      await updateStatus(orderId, params.status, params.driverId);
+      updated += 1;
+    } catch (err) {
+      failed.push({
+        orderId,
+        reason: err instanceof Error ? err.message : "Unknown error",
+      });
+    }
+  }
+
+  return { updated, failed };
 }
 
 export async function cancelOrder(

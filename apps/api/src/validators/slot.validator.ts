@@ -52,6 +52,25 @@ export const slotAvailabilityQuerySchema = z.object({
   serviceId: z.string().uuid().optional(),
 });
 
+export const pickupConfigSchema = z
+  .object({
+    morningStart: z.string().regex(TIME_REGEX, "Invalid morning start time"),
+    morningEnd: z.string().regex(TIME_REGEX, "Invalid morning end time"),
+    eveningStart: z.string().regex(TIME_REGEX, "Invalid evening start time"),
+    eveningEnd: z.string().regex(TIME_REGEX, "Invalid evening end time"),
+    instantEnabled: z.boolean(),
+    instantFee: z.number().min(0).max(1000),
+  })
+  .refine((data) => data.morningStart < data.morningEnd, {
+    message: "Morning end time must be after morning start time",
+    path: ["morningEnd"],
+  })
+  .refine((data) => data.eveningStart < data.eveningEnd, {
+    message: "Evening end time must be after evening start time",
+    path: ["eveningEnd"],
+  });
+
 export type CreateSlotDto = z.infer<typeof createSlotSchema>;
 export type CreateBulkSlotsDto = z.infer<typeof createBulkSlotsSchema>;
 export type SlotAvailabilityQuery = z.infer<typeof slotAvailabilityQuerySchema>;
+export type PickupConfigDto = z.infer<typeof pickupConfigSchema>;

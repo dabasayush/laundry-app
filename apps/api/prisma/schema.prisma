@@ -49,6 +49,11 @@ enum BroadcastTarget {
     INACTIVE // users inactive for N days (no orders placed)
 }
 
+enum DriverOrderActionType {
+    ACCEPT
+    REJECT
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model User {
@@ -195,6 +200,7 @@ model Driver {
 
     orders  Order[]
     ratings Rating[]
+    actions DriverOrderAction[]
 
     @@map("drivers")
 }
@@ -222,12 +228,30 @@ model Order {
     offer   Offer?      @relation(fields: [offerId], references: [id], onDelete: SetNull)
     items   OrderItem[]
     rating  Rating?
+    driverActions DriverOrderAction[]
 
     @@index([userId])
     @@index([driverId])
     @@index([status])
     @@index([paymentStatus])
     @@map("orders")
+}
+
+model DriverOrderAction {
+    id       String                @id @default(uuid()) @db.Uuid
+    orderId  String                @map("order_id") @db.Uuid
+    driverId String                @map("driver_id") @db.Uuid
+    action   DriverOrderActionType
+    reason   String?
+
+    createdAt DateTime @default(now()) @map("created_at")
+
+    order  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+    driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+    @@index([driverId, createdAt])
+    @@index([orderId, createdAt])
+    @@map("driver_order_actions")
 }
 
 model OrderItem {

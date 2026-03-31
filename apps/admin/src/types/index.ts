@@ -243,3 +243,12 @@ export interface Banner {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface PickupConfig {
+  morningStart: string;
+  morningEnd: string;
+  eveningStart: string;
+  eveningEnd: string;
+  instantEnabled: boolean;
+  instantFee: number;
+}

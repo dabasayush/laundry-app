@@ -6,6 +6,7 @@ import {
   createSlotSchema,
   createBulkSlotsSchema,
   slotAvailabilityQuerySchema,
+  pickupConfigSchema,
 } from "../validators/slot.validator";
 import * as slotController from "../controllers/slot.controller";
 
@@ -17,6 +18,8 @@ router.get(
   validate(slotAvailabilityQuerySchema, "query"),
   slotController.getAvailableSlots,
 );
+
+router.get("/config", slotController.getPickupConfig);
 
 // Admin-only slot management
 router.post(
@@ -32,6 +35,14 @@ router.post(
   authorize("ADMIN"),
   validate(createBulkSlotsSchema),
   slotController.createBulkSlots,
+);
+
+router.patch(
+  "/config",
+  authenticate,
+  authorize("ADMIN"),
+  validate(pickupConfigSchema),
+  slotController.updatePickupConfig,
 );
 
 export default router;

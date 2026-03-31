@@ -14,6 +14,7 @@ import type {
   Product,
   Item,
   Banner,
+  PickupConfig,
 } from "../types";
 
 export const adminApi = {
@@ -61,6 +62,15 @@ export const adminApi = {
   ): Promise<Order> =>
     adminApiClient
       .patch(`/orders/${id}/status`, { status, notes })
+      .then((r) => r.data.data),
+
+  batchUpdateOrderStatus: (
+    orderIds: string[],
+    status: string,
+    driverId?: string,
+  ): Promise<{ updated: number; failed: Array<{ orderId: string; reason: string }> }> =>
+    adminApiClient
+      .patch(`/orders/batch-status`, { orderIds, status, driverId })
       .then((r) => r.data.data),
 
   cancelOrder: (id: string): Promise<Order> =>
@@ -278,4 +288,12 @@ export const adminApi = {
 
   deleteBanner: (id: string): Promise<void> =>
     adminApiClient.delete(`/banners/${id}`).then(() => undefined),
+
+  // ── Pickup Settings ───────────────────────────────────────────────────────
+
+  getPickupConfig: (): Promise<PickupConfig> =>
+    adminApiClient.get("/slots/config").then((r) => r.data.data),
+
+  updatePickupConfig: (data: PickupConfig): Promise<PickupConfig> =>
+    adminApiClient.patch("/slots/config", data).then((r) => r.data.data),
 };

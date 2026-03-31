@@ -99,6 +99,23 @@ export async function updateOrderStatus(
   }
 }
 
+export async function batchUpdateOrderStatus(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const result = await orderService.batchUpdateStatus({
+      orderIds: req.body.orderIds,
+      status: req.body.status,
+      driverId: req.body.driverId,
+    });
+    sendSuccess(res, result, 200, "Batch status update completed");
+  } catch (err) {
+    next(err);
+  }
+}
+
 // ── PATCH /orders/:id/pickup — customer schedules / changes pickup address ─────
 
 export async function schedulePickup(

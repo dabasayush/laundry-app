@@ -13,6 +13,7 @@ export const OrderStatusEnum = z.enum([
 ]);
 
 export const PaymentMethodEnum = z.enum(["CASH", "UPI"]);
+export const PickupOptionEnum = z.enum(["MORNING", "EVENING", "INSTANT"]);
 
 // ── Reusable sub-schemas ───────────────────────────────────────────────────────
 
@@ -35,6 +36,12 @@ export const createOrderSchema = z.object({
   paymentMethod: PaymentMethodEnum,
   addressId: z.string().uuid("addressId must be a valid UUID").optional(),
   offerId: z.string().uuid("offerId must be a valid UUID").optional(),
+  pickupOption: PickupOptionEnum.optional(),
+  pickupAddressText: z
+    .string()
+    .trim()
+    .max(400, "Pickup address cannot exceed 400 characters")
+    .optional(),
   notes: z
     .string()
     .trim()
@@ -45,6 +52,12 @@ export const createOrderSchema = z.object({
 export const updateOrderStatusSchema = z.object({
   status: OrderStatusEnum,
   // Optionally assign a driver when transitioning to PICKUP_ASSIGNED
+  driverId: z.string().uuid("driverId must be a valid UUID").optional(),
+});
+
+export const batchUpdateOrderStatusSchema = z.object({
+  orderIds: z.array(z.string().uuid("orderId must be a valid UUID")).min(1),
+  status: OrderStatusEnum,
   driverId: z.string().uuid("driverId must be a valid UUID").optional(),
 });
 
@@ -72,6 +85,9 @@ export const uuidParamSchema = z.object({
 
 export type CreateOrderDto = z.infer<typeof createOrderSchema>;
 export type UpdateOrderStatusDto = z.infer<typeof updateOrderStatusSchema>;
+export type BatchUpdateOrderStatusDto = z.infer<
+  typeof batchUpdateOrderStatusSchema
+>;
 export type SchedulePickupDto = z.infer<typeof schedulePickupSchema>;
 export type AddItemsDto = z.infer<typeof addItemsSchema>;
 export type OrderQueryDto = z.infer<typeof orderQuerySchema>;

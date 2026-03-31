@@ -17,6 +17,7 @@ import {
   BarChart3,
   Box,
   Tag,
+  Clock3,
 } from "lucide-react";
 
 interface MenuItem {
@@ -32,6 +33,11 @@ const menuItems: MenuItem[] = [
   { label: "Items", icon: <Box size={20} />, href: "/items" },
   { label: "Products", icon: <Package size={20} />, href: "/products" },
   { label: "Offers", icon: <Tag size={20} />, href: "/offers" },
+  {
+    label: "Pickup Settings",
+    icon: <Clock3 size={20} />,
+    href: "/pickup-settings",
+  },
   { label: "App Banners", icon: <ImageIcon size={20} />, href: "/banners" },
   { label: "Customer", icon: <Users size={20} />, href: "/customers" },
   { label: "Drivers", icon: <Truck size={20} />, href: "/drivers" },

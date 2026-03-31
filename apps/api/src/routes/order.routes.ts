@@ -5,6 +5,7 @@ import { validate } from "../middleware/validate";
 import {
   createOrderSchema,
   updateOrderStatusSchema,
+  batchUpdateOrderStatusSchema,
   schedulePickupSchema,
   addItemsSchema,
   orderQuerySchema,
@@ -27,6 +28,13 @@ router.get(
   "/",
   validate(orderQuerySchema, "query"),
   orderController.listOrders,
+);
+
+router.patch(
+  "/batch-status",
+  authorize("ADMIN", "DRIVER"),
+  validate(batchUpdateOrderStatusSchema),
+  orderController.batchUpdateOrderStatus,
 );
 
 // ── GET /orders/:id ────────────────────────────────────────────────────────────

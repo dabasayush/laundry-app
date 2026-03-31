@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -99,9 +100,11 @@ function formatDate(iso: string) {
 
 interface OrderCardProps {
   order: Order;
+  selected: boolean;
+  onToggleSelect: (id: string) => void;
 }
 
-function OrderCard({ order }: OrderCardProps) {
+function OrderCard({ order, selected, onToggleSelect }: OrderCardProps) {
   const meta = STATUS_META[order.status] ?? {
     label: order.status,
     bg: "#F1F5F9",
@@ -123,6 +126,16 @@ function OrderCard({ order }: OrderCardProps) {
           <Text style={styles.cardId}>#{order.id.slice(-8).toUpperCase()}</Text>
           <Text style={styles.cardDate}>{formatDate(order.createdAt)}</Text>
         </View>
+        <TouchableOpacity
+          style={styles.checkboxBtn}
+          onPress={() => onToggleSelect(order.id)}
+        >
+          <Ionicons
+            name={selected ? "checkbox" : "square-outline"}
+            size={20}
+            color={selected ? C.primary : C.textMuted}
+          />
+        </TouchableOpacity>
         <View style={[styles.statusBadge, { backgroundColor: meta.bg }]}>
           <Ionicons name={meta.icon} size={13} color={meta.fg} />
           <Text style={[styles.statusText, { color: meta.fg }]}>
@@ -188,7 +201,26 @@ function OrderCard({ order }: OrderCardProps) {
 export default function OrdersScreen() {
   const { top } = useSafeAreaInsets();
   const [tab, setTab] = useState<TabKey>("active");
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+  const [bulkStatus, setBulkStatus] = useState<OrderStatus>("PICKED_UP");
   const queryClient = useQueryClient();
+
+  const bulkMutation = useMutation(
+    ({ ids, status }: { ids: string[]; status: OrderStatus }) =>
+      orderApi.batchUpdateStatus(ids, status),
+    {
+      onSuccess: () => {
+        setSelectedOrderIds([]);
+        onRefresh();
+      },
+      onError: (err: unknown) => {
+        const msg =
+          (err as { response?: { data?: { message?: string } } })?.response
+            ?.data?.message ?? "Failed to update selected orders";
+        Alert.alert("Bulk Update Failed", msg);
+      },
+    },
+  );
 
   const { data, isLoading, refetch, isRefetching } = useQuery(
     ["driver-orders", tab],
@@ -204,6 +236,30 @@ export default function OrdersScreen() {
       ? (ACTIVE_STATUSES as string[]).includes(o.status)
       : (HISTORY_STATUSES as string[]).includes(o.status),
   );
+
+  const toggleSelect = (id: string) => {
+    setSelectedOrderIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
+
+  const clearSelection = () => setSelectedOrderIds([]);
+
+  const applyBulkStatus = () => {
+    if (selectedOrderIds.length === 0) return;
+    Alert.alert(
+      "Confirm Bulk Update",
+      `Update ${selectedOrderIds.length} selected order(s) to ${bulkStatus}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Update",
+          onPress: () =>
+            bulkMutation.mutate({ ids: selectedOrderIds, status: bulkStatus }),
+        },
+      ],
+    );
+  };
 
   const onRefresh = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ["driver-orders"] });
@@ -235,6 +291,58 @@ export default function OrdersScreen() {
         ))}
       </View>
 
+      {selectedOrderIds.length > 0 && (
+        <View style={styles.bulkBar}>
+          <Text style={styles.bulkCount}>{selectedOrderIds.length} selected</Text>
+          <View style={styles.bulkActions}>
+            {[
+              { label: "Picked", value: "PICKED_UP" as OrderStatus },
+              { label: "Processing", value: "PROCESSING" as OrderStatus },
+              {
+                label: "Out for Delivery",
+                value: "OUT_FOR_DELIVERY" as OrderStatus,
+              },
+              {
+                label: "Delivered",
+                value: "DELIVERED" as OrderStatus,
+              },
+            ].map((opt) => (
+              <TouchableOpacity
+                key={opt.value}
+                style={[
+                  styles.bulkStatusChip,
+                  bulkStatus === opt.value && styles.bulkStatusChipActive,
+                ]}
+                onPress={() => setBulkStatus(opt.value)}
+              >
+                <Text
+                  style={[
+                    styles.bulkStatusChipText,
+                    bulkStatus === opt.value && styles.bulkStatusChipTextActive,
+                  ]}
+                >
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View style={styles.bulkButtonsRow}>
+            <TouchableOpacity style={styles.bulkClearBtn} onPress={clearSelection}>
+              <Text style={styles.bulkClearText}>Clear</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.bulkApplyBtn}
+              onPress={applyBulkStatus}
+              disabled={bulkMutation.isLoading}
+            >
+              <Text style={styles.bulkApplyText}>
+                {bulkMutation.isLoading ? "Updating..." : "Apply"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       {/* List */}
       {isLoading ? (
         <ActivityIndicator color={C.primary} style={{ flex: 1 }} />
@@ -242,7 +350,13 @@ export default function OrdersScreen() {
         <FlatList
           data={filtered}
           keyExtractor={(o) => o.id}
-          renderItem={({ item }) => <OrderCard order={item} />}
+          renderItem={({ item }) => (
+            <OrderCard
+              order={item}
+              selected={selectedOrderIds.includes(item.id)}
+              onToggleSelect={toggleSelect}
+            />
+          )}
           contentContainerStyle={[
             styles.list,
             filtered.length === 0 && styles.listEmpty,
@@ -300,6 +414,7 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 10,
   },
+  checkboxBtn: { marginRight: 8, padding: 2 },
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -362,4 +477,48 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingHorizontal: 32,
   },
+  bulkBar: {
+    marginHorizontal: 20,
+    marginBottom: 10,
+    backgroundColor: C.white,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 12,
+    padding: 10,
+    gap: 8,
+  },
+  bulkCount: { fontSize: 12, color: C.textMuted, fontWeight: "600" },
+  bulkActions: { flexDirection: "row", gap: 6, flexWrap: "wrap" },
+  bulkStatusChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: C.border,
+    backgroundColor: C.background,
+  },
+  bulkStatusChipActive: {
+    borderColor: C.primary,
+    backgroundColor: C.primaryLight,
+  },
+  bulkStatusChipText: { fontSize: 12, color: C.textMuted, fontWeight: "600" },
+  bulkStatusChipTextActive: { color: C.primary },
+  bulkButtonsRow: { flexDirection: "row", gap: 8 },
+  bulkClearBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 8,
+    alignItems: "center",
+    paddingVertical: 10,
+  },
+  bulkClearText: { color: C.text, fontWeight: "600", fontSize: 13 },
+  bulkApplyBtn: {
+    flex: 1,
+    backgroundColor: C.primary,
+    borderRadius: 8,
+    alignItems: "center",
+    paddingVertical: 10,
+  },
+  bulkApplyText: { color: C.white, fontWeight: "700", fontSize: 13 },
 });

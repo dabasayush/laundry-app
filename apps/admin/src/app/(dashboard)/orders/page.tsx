@@ -49,6 +49,9 @@ export default function OrdersPage() {
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [detailOrder, setDetailOrder] = useState<Order | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkStatus, setBulkStatus] = useState<OrderStatus>("PENDING");
   const [newStatus, setNewStatus] = useState<OrderStatus>("PENDING");
   const [notes, setNotes] = useState("");
 
@@ -72,6 +75,15 @@ export default function OrdersPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["orders"] });
       setSelectedOrder(null);
+    },
+  });
+
+  const bulkUpdateMutation = useMutation({
+    mutationFn: () =>
+      adminApi.batchUpdateOrderStatus(selectedIds, bulkStatus),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      setSelectedIds([]);
     },
   });
 
@@ -111,11 +123,49 @@ export default function OrdersPage() {
 
       {/* Table */}
       <Card>
+        {selectedIds.length > 0 && (
+          <div className="px-6 pt-4 flex items-center gap-3">
+            <p className="text-sm text-muted-foreground">
+              {selectedIds.length} selected
+            </p>
+            <div className="w-52">
+              <Select
+                value={bulkStatus}
+                onChange={(e) => setBulkStatus(e.target.value as OrderStatus)}
+              >
+                {ALL_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {STATUS_LABELS[s]}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <Button
+              size="sm"
+              onClick={() => bulkUpdateMutation.mutate()}
+              disabled={bulkUpdateMutation.isPending}
+            >
+              {bulkUpdateMutation.isPending ? "Updating..." : "Update Selected"}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setSelectedIds([])}>
+              Clear
+            </Button>
+          </div>
+        )}
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-slate-50 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
+                  <th className="px-6 py-3">
+                    <input
+                      type="checkbox"
+                      checked={orders.length > 0 && selectedIds.length === orders.length}
+                      onChange={(e) =>
+                        setSelectedIds(e.target.checked ? orders.map((o) => o.id) : [])
+                      }
+                    />
+                  </th>
                   <th className="px-6 py-3">Order ID</th>
                   <th className="px-6 py-3">Customer</th>
                   <th className="px-6 py-3">Driver</th>
@@ -130,7 +180,7 @@ export default function OrdersPage() {
                 {isLoading &&
                   Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i} className="border-b">
-                      {Array.from({ length: 8 }).map((_, j) => (
+                      {Array.from({ length: 9 }).map((_, j) => (
                         <td key={j} className="px-6 py-3">
                           <div className="h-4 animate-pulse rounded bg-slate-100" />
                         </td>
@@ -140,7 +190,7 @@ export default function OrdersPage() {
                 {!isLoading && orders.length === 0 && (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={9}
                       className="px-6 py-12 text-center text-muted-foreground"
                     >
                       No orders found
@@ -152,6 +202,19 @@ export default function OrdersPage() {
                     key={order.id}
                     className="border-b last:border-0 hover:bg-slate-50"
                   >
+                    <td className="px-6 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(order.id)}
+                        onChange={(e) =>
+                          setSelectedIds((prev) =>
+                            e.target.checked
+                              ? [...prev, order.id]
+                              : prev.filter((id) => id !== order.id),
+                          )
+                        }
+                      />
+                    </td>
                     <td className="px-6 py-3 font-mono text-xs text-slate-500">
                       {truncateId(order.id)}
                     </td>
@@ -193,17 +256,26 @@ export default function OrdersPage() {
                       {formatDateTime(order.createdAt)}
                     </td>
                     <td className="px-6 py-3">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedOrder(order);
-                          setNewStatus(order.status as OrderStatus);
-                          setNotes("");
-                        }}
-                      >
-                        Update
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setDetailOrder(order)}
+                        >
+                          View
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setNewStatus(order.status as OrderStatus);
+                            setNotes("");
+                          }}
+                        >
+                          Update
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -293,6 +365,54 @@ export default function OrdersPage() {
               disabled={updateMutation.isPending}
             >
               {updateMutation.isPending ? "Saving…" : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!detailOrder} onOpenChange={(open) => !open && setDetailOrder(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Order Details</DialogTitle>
+          </DialogHeader>
+          {detailOrder && (
+            <div className="space-y-3 py-2 text-sm">
+              <p>
+                <span className="text-muted-foreground">Order:</span>{" "}
+                <span className="font-mono">{truncateId(detailOrder.id)}</span>
+              </p>
+              <p>
+                <span className="text-muted-foreground">Subtotal:</span>{" "}
+                {formatCurrency(detailOrder.totalAmount)}
+              </p>
+              <p>
+                <span className="text-muted-foreground">Discount:</span>{" "}
+                {formatCurrency(detailOrder.discountAmount)}
+              </p>
+              <p className="font-semibold">
+                <span className="text-muted-foreground">Final:</span>{" "}
+                {formatCurrency(detailOrder.finalAmount)}
+              </p>
+              <div className="rounded-md border p-3">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">
+                  Items
+                </p>
+                <div className="space-y-2">
+                  {detailOrder.items?.map((it) => (
+                    <div key={it.id} className="flex items-center justify-between">
+                      <span>
+                        {it.serviceItem.name} x {it.quantity}
+                      </span>
+                      <span className="font-medium">{formatCurrency(it.subtotal)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDetailOrder(null)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -66,3 +66,29 @@ export async function createBulkSlots(
     next(err);
   }
 }
+
+export async function getPickupConfig(
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const config = await slotService.getPickupConfig();
+    sendSuccess(res, config);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updatePickupConfig(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const config = await slotService.updatePickupConfig(req.body);
+    sendSuccess(res, config, 200, "Pickup config updated");
+  } catch (err) {
+    next(err);
+  }
+}

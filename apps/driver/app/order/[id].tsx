@@ -182,6 +182,24 @@ function getDriverActions(order: Order): ActionConfig[] {
     });
   }
 
+  if (order.status === "PICKED_UP") {
+    actions.push({
+      label: "Mark as Processing",
+      icon: "cog",
+      color: C.white,
+      bg: C.info,
+    });
+  }
+
+  if (order.status === "PROCESSING") {
+    actions.push({
+      label: "Mark as Out for Delivery",
+      icon: "bicycle",
+      color: C.white,
+      bg: C.purple,
+    });
+  }
+
   if (order.status === "OUT_FOR_DELIVERY") {
     actions.push({
       label: "Mark as Delivered",
@@ -205,6 +223,8 @@ function getDriverActions(order: Order): ActionConfig[] {
 
 const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
   PICKUP_ASSIGNED: "PICKED_UP",
+  PICKED_UP: "PROCESSING",
+  PROCESSING: "OUT_FOR_DELIVERY",
   OUT_FOR_DELIVERY: "DELIVERED",
 };
 

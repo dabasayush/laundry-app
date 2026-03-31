@@ -13,7 +13,8 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useCartStore } from "../src/store/cartStore";
 import { useCreateOrder } from "../src/hooks/useBooking";
-import type { PaymentMethod } from "../src/types";
+import { useSlotAvailability } from "../src/hooks/useBooking";
+import type { PaymentMethod, PickupOption, Slot } from "../src/types";
 
 const COLORS = {
   primary: "#1F4D3A",
@@ -36,9 +37,18 @@ export default function OrderSummaryScreen() {
   const { items, total, clearCart } = useCartStore();
   const createOrder = useCreateOrder();
   const cartTotal = total();
+  const today = new Date().toISOString().slice(0, 10);
+  const { data: slots = [] } = useSlotAvailability(today);
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
   const [notes, setNotes] = useState("");
+  const [pickupAddressText, setPickupAddressText] = useState("");
+  const [pickupOption, setPickupOption] = useState<PickupOption>("MORNING");
+
+  const selectedSlot =
+    (slots as Slot[]).find((s) => s.code === pickupOption) ?? (slots as Slot[])[0];
+  const pickupFee = Number(selectedSlot?.surcharge ?? 0);
+  const payableTotal = cartTotal + pickupFee;
 
   const handlePlaceOrder = async () => {
     if (items.length === 0) {
@@ -49,7 +59,7 @@ export default function OrderSummaryScreen() {
       return;
     }
 
-    Alert.alert("Confirm Order", `Place order for ₹${cartTotal.toFixed(2)}?`, [
+    Alert.alert("Confirm Order", `Place order for ₹${payableTotal.toFixed(2)}?`, [
       { text: "Cancel", style: "cancel" },
       {
         text: "Confirm",
@@ -63,6 +73,8 @@ export default function OrderSummaryScreen() {
             const result = await createOrder.mutateAsync({
               items: orderItems as any,
               paymentMethod,
+              pickupOption,
+              pickupAddressText: pickupAddressText.trim() || undefined,
               notes: notes.trim() || undefined,
             } as any);
 
@@ -107,22 +119,26 @@ export default function OrderSummaryScreen() {
       {/* Order Items */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Order Items</Text>
-        {items.map((cartItem, idx) => (
-          <View key={cartItem.serviceItem.id}>
-            {idx > 0 && <View style={styles.divider} />}
-            <View style={styles.itemRow}>
-              <View style={styles.itemLeft}>
-                <Text style={styles.itemName}>{cartItem.serviceItem.name}</Text>
-                <Text style={styles.itemMeta}>
-                  ₹{cartItem.serviceItem.price.toFixed(2)} × {cartItem.quantity}
+        {items.map((cartItem, idx) => {
+          const price = Number(cartItem.serviceItem.price ?? 0);
+          const itemTotal = price * cartItem.quantity;
+          return (
+            <View key={cartItem.serviceItem.id}>
+              {idx > 0 && <View style={styles.divider} />}
+              <View style={styles.itemRow}>
+                <View style={styles.itemLeft}>
+                  <Text style={styles.itemName}>{cartItem.serviceItem.name}</Text>
+                  <Text style={styles.itemMeta}>
+                    ₹{price.toFixed(2)} × {cartItem.quantity}
+                  </Text>
+                </View>
+                <Text style={styles.itemTotal}>
+                  ₹{itemTotal.toFixed(2)}
                 </Text>
               </View>
-              <Text style={styles.itemTotal}>
-                ₹{(cartItem.serviceItem.price * cartItem.quantity).toFixed(2)}
-              </Text>
             </View>
-          </View>
-        ))}
+          );
+        })}
       </View>
 
       {/* Payment Method */}
@@ -164,6 +180,75 @@ export default function OrderSummaryScreen() {
         ))}
       </View>
 
+      {/* Pickup Address */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Pickup Address</Text>
+        <Text style={styles.helperText}>
+          Enter the pickup address. You can change this before placing order.
+        </Text>
+        <TextInput
+          style={[styles.notesInput, { minHeight: 64 }]}
+          placeholder="Flat/House, Street, Area, City, Pincode"
+          placeholderTextColor={COLORS.textMuted}
+          value={pickupAddressText}
+          onChangeText={setPickupAddressText}
+          multiline
+          numberOfLines={2}
+          textAlignVertical="top"
+        />
+      </View>
+
+      {/* Pickup Timing */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Pickup Timing</Text>
+        {(slots as Slot[]).length === 0 ? (
+          <Text style={styles.helperText}>No pickup slots available right now.</Text>
+        ) : (
+          (slots as Slot[]).map((slot) => {
+            const selected = pickupOption === slot.code;
+            return (
+              <TouchableOpacity
+                key={slot.id}
+                style={[
+                  styles.paymentOption,
+                  selected && styles.paymentOptionSelected,
+                ]}
+                onPress={() => setPickupOption(slot.code)}
+                activeOpacity={0.85}
+              >
+                <Ionicons
+                  name={slot.code === "INSTANT" ? "flash-outline" : "time-outline"}
+                  size={20}
+                  color={selected ? COLORS.primary : COLORS.textMuted}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={[
+                      styles.paymentLabel,
+                      selected && styles.paymentLabelSelected,
+                    ]}
+                  >
+                    {slot.code === "INSTANT"
+                      ? "Instant Pickup"
+                      : `${slot.startTime} - ${slot.endTime}`}
+                  </Text>
+                  {slot.surcharge > 0 ? (
+                    <Text style={styles.slotFeeText}>+₹{slot.surcharge.toFixed(2)} surcharge</Text>
+                  ) : null}
+                </View>
+                {selected && (
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={20}
+                    color={COLORS.primary}
+                  />
+                )}
+              </TouchableOpacity>
+            );
+          })
+        )}
+      </View>
+
       {/* Special Instructions */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Special Instructions</Text>
@@ -192,9 +277,13 @@ export default function OrderSummaryScreen() {
             -₹0.00
           </Text>
         </View>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Pickup Charges</Text>
+          <Text style={styles.summaryValue}>₹{pickupFee.toFixed(2)}</Text>
+        </View>
         <View style={[styles.summaryRow, styles.totalRow]}>
           <Text style={styles.totalLabel}>Total</Text>
-          <Text style={styles.totalValue}>₹{cartTotal.toFixed(2)}</Text>
+          <Text style={styles.totalValue}>₹{payableTotal.toFixed(2)}</Text>
         </View>
       </View>
 
@@ -213,7 +302,7 @@ export default function OrderSummaryScreen() {
         ) : (
           <>
             <Text style={styles.placeOrderText}>Place Order</Text>
-            <Text style={styles.placeOrderAmount}>₹{cartTotal.toFixed(2)}</Text>
+            <Text style={styles.placeOrderAmount}>₹{payableTotal.toFixed(2)}</Text>
           </>
         )}
       </TouchableOpacity>
@@ -264,6 +353,17 @@ const styles = StyleSheet.create({
   },
   paymentLabel: { flex: 1, fontSize: 14, color: COLORS.text },
   paymentLabelSelected: { color: COLORS.primary, fontWeight: "600" },
+  helperText: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    marginBottom: 10,
+    lineHeight: 18,
+  },
+  slotFeeText: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    marginTop: 2,
+  },
   notesInput: {
     borderWidth: 1.5,
     borderColor: COLORS.border,
