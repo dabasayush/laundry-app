@@ -198,7 +198,12 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
       >
         {/* Banner Slider */}
         {loading && banners.length === 0 ? (
-          <View style={[styles.bannerContainer, { justifyContent: "center", alignItems: "center", height: 200 }]}>
+          <View
+            style={[
+              styles.bannerContainer,
+              { justifyContent: "center", alignItems: "center", height: 200 },
+            ]}
+          >
             <ActivityIndicator size="large" color={COLORS.primary} />
           </View>
         ) : banners.length > 0 ? (
