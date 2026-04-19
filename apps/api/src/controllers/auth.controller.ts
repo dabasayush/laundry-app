@@ -3,6 +3,7 @@ import * as authService from "../services/auth.service";
 import * as otpService from "../services/otp.service";
 import { sendSuccess, sendCreated } from "../utils/apiResponse";
 import { logger } from "../config/logger";
+import { AppError } from "../middleware/errorHandler";
 
 export async function register(
   req: Request,
@@ -10,6 +11,14 @@ export async function register(
   next: NextFunction,
 ): Promise<void> {
   try {
+    // Block admin registration via this endpoint
+    if (req.body.role === "ADMIN") {
+      throw new AppError(
+        "Admin accounts cannot be created via registration",
+        403,
+      );
+    }
+
     const { user, tokens } = await authService.register(req.body);
     sendCreated(res, { user, tokens }, "Account created successfully");
   } catch (err) {

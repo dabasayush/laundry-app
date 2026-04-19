@@ -54,21 +54,45 @@ enum DriverOrderActionType {
     REJECT
 }
 
+enum DriverDocumentType {
+    LICENSE
+    ID_PROOF
+    VEHICLE_RC
+    INSURANCE
+}
+
+enum VerificationStatus {
+    PENDING
+    APPROVED
+    REJECTED
+}
+
+enum CancellationReason {
+    CUSTOMER_REQUEST
+    OUT_OF_STOCK
+    DRIVER_UNAVAILABLE
+    TECHNICAL_ISSUE
+    OTHER
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model User {
-    id            String    @id @default(uuid()) @db.Uuid
-    name          String?   @db.VarChar(100)
-    phone         String    @unique @db.VarChar(20)
-    email         String?   @unique @db.VarChar(255)
-    passwordHash  String?   @map("password_hash")
-    role          Role      @default(CUSTOMER)
-    fcmToken      String?   @map("fcm_token")
-    isVerified    Boolean   @default(false) @map("is_verified")
-    isActive      Boolean   @default(true) @map("is_active")
-    totalOrders   Int       @default(0) @map("total_orders")
-    totalSpent    Decimal   @default(0) @map("total_spent") @db.Decimal(12, 2)
-    lastOrderDate DateTime? @map("last_order_date")
+    id               String    @id @default(uuid()) @db.Uuid
+    name             String?   @db.VarChar(100)
+    phone            String    @unique @db.VarChar(20)
+    email            String?   @unique @db.VarChar(255)
+    passwordHash     String?   @map("password_hash")
+    role             Role      @default(CUSTOMER)
+    fcmToken         String?   @map("fcm_token")
+    isVerified       Boolean   @default(false) @map("is_verified")
+    isActive         Boolean   @default(true) @map("is_active")
+    totalOrders      Int       @default(0) @map("total_orders")
+    totalSpent       Decimal   @default(0) @map("total_spent") @db.Decimal(12, 2)
+    lastOrderDate    DateTime? @map("last_order_date")
+    lastLoginAt      DateTime? @map("last_login_at")
+    loginAttempts    Int       @default(0) @map("login_attempts")
+    lockedUntil      DateTime? @map("locked_until")
 
     createdAt DateTime @default(now()) @map("created_at")
     updatedAt DateTime @updatedAt @map("updated_at")
@@ -78,7 +102,11 @@ model User {
     ratings       Rating[]
     notifications Notification[]
     refreshTokens RefreshToken[]
+    createdDrivers Driver[] @relation("CreatedByAdmin")
+    verifiedDocuments DriverDocument[] @relation("VerifiedByAdmin")
 
+    @@index([role])
+    @@index([isActive])
     @@map("users")
 }
 
@@ -187,13 +215,20 @@ model ServiceItem {
 
 model Driver {
     id              String  @id @default(uuid()) @db.Uuid
+    userId          String? @map("user_id") @db.Uuid
     name            String  @db.VarChar(100)
     phone           String  @unique @db.VarChar(20)
+    email           String? @db.VarChar(255)
+    passwordHash    String? @map("password_hash")
     vehicleNumber   String? @map("vehicle_number") @db.VarChar(20)
+    vehicleType     String? @map("vehicle_type") @db.VarChar(50)
     fcmToken        String? @map("fcm_token")
     isActive        Boolean @default(true) @map("is_active")
     isAvailable     Boolean @default(false) @map("is_available")
     totalDeliveries Int     @default(0) @map("total_deliveries")
+    totalRating     Decimal @default(0) @map("total_rating") @db.Decimal(3, 2)
+    createdBy       String? @map("created_by") @db.Uuid
+    lastLoginAt     DateTime? @map("last_login_at")
 
     createdAt DateTime @default(now()) @map("created_at")
     updatedAt DateTime @updatedAt @map("updated_at")
@@ -201,23 +236,73 @@ model Driver {
     orders  Order[]
     ratings Rating[]
     actions DriverOrderAction[]
+    earnings Earning[]
+    documents DriverDocument[]
+    admin User? @relation("CreatedByAdmin", fields: [createdBy], references: [id], onDelete: SetNull)
 
+    @@index([userId])
+    @@index([isActive])
+    @@index([isAvailable])
     @@map("drivers")
 }
 
+model DriverDocument {
+    id          String  @id @default(uuid()) @db.Uuid
+    driverId    String  @map("driver_id") @db.Uuid
+    type        DriverDocumentType
+    url         String
+    verified    VerificationStatus @default(PENDING)
+    rejectionReason String?
+    verifiedAt  DateTime? @map("verified_at")
+    verifiedBy  String? @map("verified_by") @db.Uuid
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+    verifier User? @relation("VerifiedByAdmin", fields: [verifiedBy], references: [id], onDelete: SetNull)
+
+    @@index([driverId])
+    @@index([verified])
+    @@map("driver_documents")
+}
+
+model Earning {
+    id          String  @id @default(uuid()) @db.Uuid
+    driverId    String  @map("driver_id") @db.Uuid
+    orderId     String? @map("order_id") @db.Uuid
+    amount      Decimal @db.Decimal(10, 2)
+    earnedAt    DateTime @map("earned_at")
+    type        String  @default("DELIVERY") // DELIVERY, BONUS, etc.
+    status      String  @default("PENDING") // PENDING, PAID, WITHHELD
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+    @@index([driverId])
+    @@index([earnedAt])
+    @@index([status])
+    @@map("earnings")
+}
+
 model Order {
-    id             String        @id @default(uuid()) @db.Uuid
-    userId         String        @map("user_id") @db.Uuid
-    driverId       String?       @map("driver_id") @db.Uuid
-    addressId      String?       @map("address_id") @db.Uuid
-    offerId        String?       @map("offer_id") @db.Uuid
-    totalAmount    Decimal       @map("total_amount") @db.Decimal(10, 2)
-    discountAmount Decimal       @default(0) @map("discount_amount") @db.Decimal(10, 2)
-    finalAmount    Decimal       @map("final_amount") @db.Decimal(10, 2)
-    paymentMethod  PaymentMethod @map("payment_method")
-    paymentStatus  PaymentStatus @default(PENDING) @map("payment_status")
-    status         OrderStatus   @default(PENDING)
-    notes          String?
+    id               String              @id @default(uuid()) @db.Uuid
+    userId           String              @map("user_id") @db.Uuid
+    driverId         String?             @map("driver_id") @db.Uuid
+    addressId        String?             @map("address_id") @db.Uuid
+    offerId          String?             @map("offer_id") @db.Uuid
+    totalAmount      Decimal             @map("total_amount") @db.Decimal(10, 2)
+    discountAmount   Decimal             @default(0) @map("discount_amount") @db.Decimal(10, 2)
+    finalAmount      Decimal             @map("final_amount") @db.Decimal(10, 2)
+    paymentMethod    PaymentMethod       @map("payment_method")
+    paymentStatus    PaymentStatus       @default(PENDING) @map("payment_status")
+    status           OrderStatus         @default(PENDING)
+    notes            String?
+    cancellationReason CancellationReason? @map("cancellation_reason")
+    cancelledAt      DateTime?           @map("cancelled_at")
+    cancelledBy      String?             @map("cancelled_by") // CUSTOMER or ADMIN
 
     createdAt DateTime @default(now()) @map("created_at")
     updatedAt DateTime @updatedAt @map("updated_at")

@@ -1,7 +1,7 @@
 import type { AnyZodObject, ZodEffects } from "zod";
 import type { Request, Response, NextFunction } from "express";
 
-type ZodSchema = AnyZodObject | ZodEffects<AnyZodObject>;
+type ZodSchema = AnyZodObject | ZodEffects<any>;
 type RequestTarget = "body" | "query" | "params";
 
 /**

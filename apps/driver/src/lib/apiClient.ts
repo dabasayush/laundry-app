@@ -1,78 +1,66 @@
-import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
-import { getTokens, saveTokens, clearTokens } from "../store/authStore";
+import axios, { type AxiosInstance } from 'axios'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { API_BASE_URL } from '@/config/env'
 
-export const apiClient = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000/api/v1",
-  timeout: 15_000,
-  headers: { "Content-Type": "application/json" },
-});
-
-// ── Attach access token on every request ─────────────────────────────────────
-apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const { accessToken } = getTokens();
-  if (accessToken) {
-    config.headers.Authorization = `Bearer ${accessToken}`;
-  }
-  return config;
-});
-
-// ── Auto-refresh on 401 with queuing support ──────────────────────────────────
-let isRefreshing = false;
-let failedQueue: Array<{
-  resolve: (token: string) => void;
-  reject: (err: unknown) => void;
-}> = [];
-
-function processQueue(error: unknown, token: string | null = null): void {
-  failedQueue.forEach((p) => (error ? p.reject(error) : p.resolve(token!)));
-  failedQueue = [];
-}
-
-apiClient.interceptors.response.use(
-  (res) => res,
-  async (error: AxiosError) => {
-    const original = error.config as InternalAxiosRequestConfig & {
-      _retry?: boolean;
-    };
-
-    if (error.response?.status !== 401 || original._retry) {
-      return Promise.reject(error);
-    }
-
-    if (isRefreshing) {
-      return new Promise<string>((resolve, reject) => {
-        failedQueue.push({ resolve, reject });
-      }).then((token) => {
-        original.headers.Authorization = `Bearer ${token}`;
-        return apiClient(original);
-      });
-    }
-
-    original._retry = true;
-    isRefreshing = true;
-
-    try {
-      const { refreshToken } = getTokens();
-      const { data } = await axios.post(
-        `${apiClient.defaults.baseURL}/auth/refresh`,
-        { refreshToken },
-      );
-      const newTokens = {
-        accessToken: data.data.accessToken,
-        refreshToken: data.data.refreshToken,
-      };
-      await saveTokens(newTokens);
-      processQueue(null, newTokens.accessToken);
-      original.headers.Authorization = `Bearer ${newTokens.accessToken}`;
-      return apiClient(original);
-    } catch (err) {
-      processQueue(err);
-      await clearTokens();
-      return Promise.reject(err);
-    } finally {
-      isRefreshing = false;
-    }
+const API_CLIENT: AxiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
   },
-);
+})
 
-export default apiClient;
+// Request interceptor to attach access token
+API_CLIENT.interceptors.request.use(
+  async (config) => {
+    const token = await AsyncStorage.getItem('accessToken')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => Promise.reject(error)
+)
+
+// Response interceptor to handle token refresh
+API_CLIENT.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config as any
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true
+      try {
+        const refreshToken = await AsyncStorage.getItem('refreshToken')
+        if (!refreshToken) {
+          throw new Error('No refresh token available')
+        }
+
+        const response = await axios.post(
+          `${API_BASE_URL.replace('/api/v1', '')}/auth/refresh`,
+          { refreshToken },
+          { timeout: 10000 }
+        )
+
+        const { accessToken, refreshToken: newRefresh } = response.data.data
+        await AsyncStorage.multiSet([
+          ['accessToken', accessToken],
+          ['refreshToken', newRefresh],
+        ])
+
+        API_CLIENT.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`
+        originalRequest.headers['Authorization'] = `Bearer ${accessToken}`
+
+        return API_CLIENT(originalRequest)
+      } catch (_err) {
+        await AsyncStorage.removeItem('accessToken')
+        await AsyncStorage.removeItem('refreshToken')
+        return Promise.reject(error)
+      }
+    }
+
+    return Promise.reject(error)
+  }
+)
+
+export default API_CLIENT

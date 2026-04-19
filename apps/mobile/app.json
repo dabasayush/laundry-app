@@ -1,33 +1,40 @@
 {
-  "expo": {
-    "name": "Laundry",
-    "slug": "laundry-mobile",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "userInterfaceStyle": "light",
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.laundry.mobile"
+  "name": "Laundry",
+  "slug": "laundry-mobile",
+  "version": "1.0.0",
+  "orientation": "portrait",
+  "icon": "./assets/icon.png",
+  "scheme": "laundry",
+  "backgroundColor": "#ffffff",
+  "splash": {
+    "image": "./assets/splash.png",
+    "resizeMode": "contain",
+    "backgroundColor": "#4F46E5"
+  },
+  "assetBundlePatterns": [
+    "**/*"
+  ],
+  "ios": {
+    "supportsTabletMode": false,
+    "bundleIdentifier": "com.laundry.mobile",
+    "buildNumber": "1"
+  },
+  "android": {
+    "adaptiveIcon": {
+      "foregroundImage": "./assets/adaptive-icon.png",
+      "backgroundColor": "#4F46E5"
     },
-    "android": {
-      "package": "com.laundry.mobile"
-    },
-    "plugins": [
-      "expo-router",
-      "expo-secure-store",
-      [
-        "expo-location",
-        {
-          "locationWhenInUsePermission": "Allow Laundry to access your location to auto-fill your address.",
-          "isAndroidForegroundServiceEnabled": false
-        }
-      ]
-    ],
-    "scheme": "laundry",
-    "extra": {
-      "eas": {
-        "projectId": "laundry-mobile"
+    "package": "com.laundry.mobile"
+  },
+  "web": {
+    "favicon": "./assets/favicon.png"
+  },
+  "plugins": [
+    [
+      "expo-location",
+      {
+        "locationAlwaysAndWhenInUsePermission": "Allow Laundry to access your location"
       }
-    }
-  }
+    ]
+  ]
 }

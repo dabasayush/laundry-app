@@ -7,15 +7,16 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:api": "yarn workspace @laundry/api dev",
-    "dev:admin": "yarn workspace @laundry/admin dev",
-    "dev:mobile": "yarn workspace @laundry/mobile start",
-    "build:api": "yarn workspace @laundry/api build",
-    "build:admin": "yarn workspace @laundry/admin build",
-    "db:migrate": "yarn workspace @laundry/api db:migrate",
-    "db:seed": "yarn workspace @laundry/api db:seed",
-    "test": "yarn workspaces run test",
-    "lint": "yarn workspaces run lint",
+    "dev:api": "npm --workspace @laundry/api run dev",
+    "dev:admin": "npm --workspace @laundry/admin run dev",
+    "dev:mobile": "npm --workspace @laundry/mobile start",
+    "dev:driver": "npm --workspace @laundry/driver start",
+    "build:api": "npm --workspace @laundry/api run build",
+    "build:admin": "npm --workspace @laundry/admin run build",
+    "db:migrate": "npm --workspace @laundry/api run db:migrate",
+    "db:seed": "npm --workspace @laundry/api run db:seed",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down"
   },
@@ -33,7 +34,7 @@
   },
   "engines": {
     "node": ">=20.0.0",
-    "yarn": ">=4.0.0"
+    "npm": ">=10.0.0"
   },
   "description": "",
   "main": "index.js",
@@ -54,7 +55,6 @@
   "overrides": {
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "react-native-maps": "1.14.0",
-    "expo-linking": "6.3.1"
+    "react-native": "0.74.0"
   }
 }

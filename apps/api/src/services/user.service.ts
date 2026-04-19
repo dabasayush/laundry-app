@@ -15,7 +15,10 @@ export async function findById(id: string): Promise<SafeUser> {
   const cached = await cacheGet<SafeUser>(cacheKey);
   if (cached) return cached;
 
-  const user = await prisma.user.findUnique({ where: { id } });
+  const user = await prisma.user.findUnique({
+    where: { id },
+    include: { addresses: true },
+  });
   if (!user) throw new AppError("User not found", 404);
 
   const safeUser = stripPassword(user);
@@ -34,10 +37,24 @@ export async function updateMe(
     if (conflict) throw new AppError("Phone number already in use", 409);
   }
 
-  const user = await prisma.user.update({ where: { id }, data });
+  const user = await prisma.user.update({
+    where: { id },
+    data,
+    include: { addresses: true },
+  });
   const safeUser = stripPassword(user);
   await cacheSet(CacheKeys.user(id), safeUser, TTL.USER);
   return safeUser;
+}
+
+export async function findByPhone(phone: string): Promise<SafeUser | null> {
+  const user = await prisma.user.findUnique({
+    where: { phone },
+    include: { addresses: true },
+  });
+
+  if (!user) return null;
+  return stripPassword(user);
 }
 
 export async function listAll(params: {
@@ -63,7 +80,27 @@ export async function listAll(params: {
   return { users: users.map(stripPassword), total };
 }
 
-export async function deactivate(id: string): Promise<void> {
+export async function blockUser(id: string): Promise<void> {
   await prisma.user.update({ where: { id }, data: { isActive: false } });
+  await cacheDel(CacheKeys.user(id));
+}
+
+export async function unblockUser(id: string): Promise<void> {
+  await prisma.user.update({ where: { id }, data: { isActive: true } });
+  await cacheDel(CacheKeys.user(id));
+}
+
+export async function deleteUser(id: string): Promise<void> {
+  // Delete all related data
+  await Promise.all([
+    prisma.address.deleteMany({ where: { userId: id } }),
+    prisma.order.deleteMany({ where: { userId: id } }),
+    prisma.notification.deleteMany({ where: { userId: id } }),
+  ]);
+
+  // Delete the user
+  await prisma.user.delete({ where: { id } });
+
+  // Clear cache
   await cacheDel(CacheKeys.user(id));
 }

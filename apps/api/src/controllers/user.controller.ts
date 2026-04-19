@@ -75,13 +75,58 @@ export async function getUserById(
   }
 }
 
-export async function deactivateUser(
+export async function getUserByPhone(
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
-    await userService.deactivate(req.params.id);
+    const { mobile } = req.query;
+    if (!mobile || typeof mobile !== "string") {
+      sendSuccess(res, null, 200, "No user found");
+      return;
+    }
+
+    const user = await userService.findByPhone(mobile);
+    sendSuccess(res, user, 200, user ? "User found" : "User not found");
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function blockUser(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    await userService.blockUser(req.params.id);
+    sendNoContent(res);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function unblockUser(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    await userService.unblockUser(req.params.id);
+    sendNoContent(res);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function deleteUser(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    await userService.deleteUser(req.params.id);
     sendNoContent(res);
   } catch (err) {
     next(err);

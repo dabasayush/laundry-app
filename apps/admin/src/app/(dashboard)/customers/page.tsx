@@ -38,9 +38,18 @@ export default function CustomersPage() {
       }),
   });
 
-  const toggleMutation = useMutation({
-    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
-      adminApi.toggleUserActive(id, isActive),
+  const blockMutation = useMutation({
+    mutationFn: (id: string) => adminApi.blockUser(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["users", "customers"] }),
+  });
+
+  const unblockMutation = useMutation({
+    mutationFn: (id: string) => adminApi.unblockUser(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["users", "customers"] }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => adminApi.deleteUser(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["users", "customers"] }),
   });
 
@@ -147,19 +156,45 @@ export default function CustomersPage() {
                       {formatDate(user.createdAt)}
                     </td>
                     <td className="px-6 py-3">
-                      <Button
-                        size="sm"
-                        variant={user.isActive ? "destructive" : "outline"}
-                        onClick={() =>
-                          toggleMutation.mutate({
-                            id: user.id,
-                            isActive: !user.isActive,
-                          })
-                        }
-                        disabled={toggleMutation.isPending}
-                      >
-                        {user.isActive ? "Block" : "Unblock"}
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant={user.isActive ? "destructive" : "outline"}
+                          onClick={() =>
+                            user.isActive
+                              ? blockMutation.mutate(user.id)
+                              : unblockMutation.mutate(user.id)
+                          }
+                          disabled={
+                            blockMutation.isPending ||
+                            unblockMutation.isPending ||
+                            deleteMutation.isPending
+                          }
+                        >
+                          {user.isActive ? "Block" : "Unblock"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => {
+                            if (
+                              confirm(
+                                `Delete ${user.name || user.phone}? This action cannot be undone.`,
+                              )
+                            ) {
+                              deleteMutation.mutate(user.id);
+                            }
+                          }}
+                          disabled={
+                            deleteMutation.isPending ||
+                            blockMutation.isPending ||
+                            unblockMutation.isPending
+                          }
+                        >
+                          Delete
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -1,35 +1,16 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "node",
-    "lib": [
-      "ESNext",
-      "DOM"
-    ],
+    "target": "ES2022",
+    "lib": ["ES2022"],
     "jsx": "react-jsx",
-    "strict": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "allowJs": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "noEmit": true,
+    "jsxImportSource": "nativewind",
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"],
+      "@laundry/shared-types": ["../../packages/shared-types/src/index.ts"]
     }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.d.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ],
-  "extends": "expo/tsconfig.base"
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", ".expo", "coverage"]
 }

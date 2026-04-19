@@ -123,9 +123,9 @@ export async function sendOtp(phone: string): Promise<void> {
 
   // In development, log the OTP and skip real SMS dispatch
   if (env.NODE_ENV === "development") {
-    logger.warn(
-      `\n${"=".repeat(40)}\n🎯 [DEV MODE] OTP Code for Testing:\nPhone: ${phone}\nCode: ${otp}\n${"=".repeat(40)}\n`,
-    );
+    const message = `\n${"=".repeat(60)}\n📱 [OTP READY FOR TESTING]\n${"=".repeat(60)}\nPhone: ${phone}\nOTP Code: ${otp}\nValid for: 5 minutes\n${"=".repeat(60)}\n`;
+    console.log("\x1b[42m\x1b[30m", message, "\x1b[0m");
+    logger.warn(message);
     return;
   }
 
@@ -149,6 +149,11 @@ export async function verifyOtp(
   user: SafeUser;
   tokens: { accessToken: string; refreshToken: string };
 }> {
+  logger.info(`✅ [OTP Verification] Attempting to verify OTP for ${phone}`);
+  console.log(
+    `\n📲 [OTP Verification] Phone: ${phone}, Provided OTP: ${otp}\n`,
+  );
+
   const redis = getRedisClient();
   const otpKey = CacheKeys.otp(phone);
   const attemptsKey = CacheKeys.otpAttempts(phone);
@@ -170,6 +175,8 @@ export async function verifyOtp(
     );
   }
 
+  logger.info(`📊 [OTP Verification] Stored OTP: ${stored}, Provided: ${otp}`);
+
   // Constant-time comparison prevents timing-based attacks
   const inputBuf = Buffer.from(otp.padStart(6, "0"));
   const storedBuf = Buffer.from(stored.padStart(6, "0"));
@@ -183,6 +190,11 @@ export async function verifyOtp(
     pipe.incr(attemptsKey);
     pipe.expire(attemptsKey, OTP_ATTEMPTS_TTL);
     await pipe.exec();
+
+    console.log(`\n❌ [OTP MISMATCH] Expected: ${stored}, Got: ${otp}\n`);
+    logger.warn(
+      `❌ [OTP Verification Failed] Phone: ${phone}, Expected: ${stored}, Got: ${otp}`,
+    );
     throw new AppError("Invalid OTP.", 401);
   }
 
@@ -212,6 +224,13 @@ export async function verifyOtp(
   // Strip passwordHash from the returned user object
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { passwordHash: _ph, ...safeUser } = user;
+
+  console.log(
+    `\n${"=".repeat(60)}\n✅ [OTP VERIFIED SUCCESSFULLY]\nPhone: ${phone}\nUser: ${user.name || "New User"}\nStatus: ${user.name ? "RETURNING" : "NEW"}\n${"=".repeat(60)}\n`,
+  );
+  logger.info(
+    `✅ [OTP Verified] Phone: ${phone}, User: ${user.id}, isNew: ${!user.name}`,
+  );
 
   return { user: safeUser as SafeUser, tokens };
 }

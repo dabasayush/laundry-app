@@ -68,7 +68,10 @@ export const adminApi = {
     orderIds: string[],
     status: string,
     driverId?: string,
-  ): Promise<{ updated: number; failed: Array<{ orderId: string; reason: string }> }> =>
+  ): Promise<{
+    updated: number;
+    failed: Array<{ orderId: string; reason: string }>;
+  }> =>
     adminApiClient
       .patch(`/orders/batch-status`, { orderIds, status, driverId })
       .then((r) => r.data.data),
@@ -88,8 +91,14 @@ export const adminApi = {
   getUser: (id: string): Promise<User> =>
     adminApiClient.get(`/users/${id}`).then((r) => r.data.data),
 
-  toggleUserActive: (id: string, isActive: boolean): Promise<User> =>
-    adminApiClient.patch(`/users/${id}`, { isActive }).then((r) => r.data.data),
+  blockUser: (id: string): Promise<void> =>
+    adminApiClient.post(`/users/${id}/block`).then(() => undefined),
+
+  unblockUser: (id: string): Promise<void> =>
+    adminApiClient.post(`/users/${id}/unblock`).then(() => undefined),
+
+  deleteUser: (id: string): Promise<void> =>
+    adminApiClient.delete(`/users/${id}`).then(() => undefined),
 
   // ── Services ────────────────────────────────────────────────────────────────
 

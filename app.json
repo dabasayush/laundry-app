@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "laundry-platform",
+    "slug": "laundry-platform",
+    "version": "1.0.0",
+    "description": "",
+    "sdkVersion": "51.0.0",
+    "platforms": [
+      "ios",
+      "android"
+    ]
+  }
+}

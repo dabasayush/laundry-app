@@ -2,56 +2,87 @@
   "name": "@laundry/mobile",
   "version": "1.0.0",
   "private": true,
-  "main": "expo-router/entry",
+  "expo": {
+    "name": "Laundry",
+    "slug": "laundry-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "iOS": {
+      "supportsTabletMode": false,
+      "bundleIdentifier": "com.laundry.mobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.laundry.mobile"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Laundry to access your location"
+        }
+      ]
+    ]
+  },
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "build:android": "eas build --platform android",
-    "build:ios": "eas build --platform ios",
-    "test": "jest",
-    "lint": "eslint src --ext .ts,.tsx"
+    "web": "expo start --web",
+    "eject": "expo eject",
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@expo-google-fonts/inter": "^0.4.2",
-    "@expo-google-fonts/playfair-display": "^0.4.2",
-    "@expo/vector-icons": "~14.0.2",
-    "@react-native-async-storage/async-storage": "^1.23.1",
+    "@react-native-async-storage/async-storage": "^1.24.0",
+    "@react-native-community/netinfo": "^11.5.2",
     "@react-navigation/bottom-tabs": "^6.5.20",
-    "@react-navigation/native": "^6.1.18",
+    "@react-navigation/native": "^6.1.17",
     "@react-navigation/native-stack": "^6.9.26",
-    "@stripe/stripe-react-native": "^0.37.3",
-    "axios": "^1.13.6",
-    "expo": "~51.0.0",
-    "expo-constants": "~16.0.2",
-    "expo-device": "~6.0.2",
-    "expo-font": "~12.0.6",
-    "expo-linear-gradient": "^55.0.9",
-    "expo-linking": "~6.3.1",
-    "expo-location": "~17.0.1",
-    "expo-modules-core": "^1.12.26",
-    "expo-notifications": "~0.28.0",
-    "expo-router": "~3.5.14",
-    "expo-secure-store": "~13.0.1",
-    "expo-splash-screen": "~0.27.4",
-    "expo-status-bar": "~1.12.1",
+    "@reduxjs/toolkit": "^2.0.1",
+    "axios": "^1.7.2",
+    "expo": "^51.0.0",
+    "expo-constants": "^16.0.0",
+    "expo-font": "^12.0.0",
+    "expo-image-picker": "~15.1.0",
+    "expo-location": "^17.0.0",
+    "expo-notifications": "~0.28.19",
+    "expo-screen-orientation": "^7.0.0",
+    "expo-status-bar": "^1.12.1",
+    "expo-task-manager": "11.8.2",
+    "nativewind": "^2.0.11",
     "react": "18.2.0",
+    "react-hook-form": "^7.52.0",
     "react-native": "0.74.0",
-    "react-native-maps": "1.14.0",
-    "react-native-safe-area-context": "^4.9.0",
-    "react-native-screens": "^3.31.1",
-    "react-query": "^3.39.3",
-    "react-redux": "^9.2.0",
-    "redux": "^5.0.1",
-    "zustand": "^4.5.2"
+    "react-native-gesture-handler": "~2.31.1",
+    "react-native-maps": "^1.14.0",
+    "react-native-reanimated": "~3.19.5",
+    "react-native-safe-area-context": "4.10.5",
+    "react-native-screens": "3.31.1",
+    "react-redux": "^2.0.0",
+    "redux": "^5.0.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.24.4",
-    "@types/react": "~18.2.79",
-    "@types/react-native": "^0.73.0",
-    "babel-preset-expo": "~11.0.6",
+    "@react-native-community/eslint-config": "^3.2.0",
+    "@types/react": "^18.2.79",
+    "@types/react-native": "~0.73.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
     "jest": "^29.7.0",
-    "jest-expo": "~51.0.0",
+    "tailwindcss": "^4.2.1",
     "typescript": "~5.3.3"
   }
 }

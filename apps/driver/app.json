@@ -1,51 +1,46 @@
 {
-  "expo": {
-    "name": "Laundry Driver",
-    "slug": "laundry-driver",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "splash": {
-      "backgroundColor": "#059669"
+  "name": "Laundry Driver",
+  "slug": "laundry-driver",
+  "version": "1.0.0",
+  "orientation": "portrait",
+  "icon": "./assets/icon.png",
+  "scheme": "laundry-driver",
+  "backgroundColor": "#ffffff",
+  "splash": {
+    "image": "./assets/splash.png",
+    "resizeMode": "contain",
+    "backgroundColor": "#4F46E5"
+  },
+  "assetBundlePatterns": [
+    "**/*"
+  ],
+  "ios": {
+    "supportsTabletMode": false,
+    "bundleIdentifier": "com.laundry.driver",
+    "buildNumber": "1"
+  },
+  "android": {
+    "adaptiveIcon": {
+      "foregroundImage": "./assets/adaptive-icon.png",
+      "backgroundColor": "#4F46E5"
     },
-    "ios": {
-      "supportsTablet": false,
-      "bundleIdentifier": "com.laundry.driver",
-      "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Laundry Driver needs your location to show your position on the delivery map.",
-        "NSLocationAlwaysUsageDescription": "Laundry Driver needs your location to track your position during deliveries."
-      },
-      "config": {
-        "googleMapsApiKey": "$(GOOGLE_MAPS_API_KEY)"
+    "package": "com.laundry.driver"
+  },
+  "web": {
+    "favicon": "./assets/favicon.png"
+  },
+  "plugins": [
+    [
+      "expo-location",
+      {
+        "locationAlwaysAndWhenInUsePermission": "Allow Laundry Driver to access your location"
       }
-    },
-    "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#059669"
-      },
-      "package": "com.laundry.driver",
-      "config": {
-        "googleMaps": {
-          "apiKey": "$(GOOGLE_MAPS_API_KEY)"
-        }
-      }
-    },
-    "plugins": [
-      "expo-router",
-      "expo-secure-store",
-      [
-        "expo-location",
-        {
-          "locationWhenInUsePermission": "Allow Laundry Driver to access your location to show your position on the delivery map."
-        }
-      ]
     ],
-    "scheme": "laundry-driver",
-    "extra": {
-      "eas": {
-        "projectId": "laundry-driver"
+    [
+      "expo-background-fetch",
+      {
+        "startOnBoot": true
       }
-    }
-  }
+    ]
+  ]
 }

@@ -7,8 +7,8 @@ import { Toaster } from "react-hot-toast";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Laundry Admin",
-  description: "Laundry Platform Management Dashboard",
+  title: "Lavish Care Laundry - Admin",
+  description: "Lavish Care Laundry Management Dashboard",
 };
 
 export default function RootLayout({

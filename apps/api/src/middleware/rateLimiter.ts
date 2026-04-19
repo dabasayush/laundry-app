@@ -31,6 +31,31 @@ export const authLimiter: RequestHandler = rateLimit({
   skipSuccessfulRequests: true, // don't count successful logins
 }) as unknown as RequestHandler;
 
+/** Strict limiter for OTP sending — 10 requests per hour per IP */
+export const sendOtpLimiter: RequestHandler = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  statusCode: StatusCodes.TOO_MANY_REQUESTS,
+  message: rateLimitResponse(
+    "Too many OTP requests. Please try again in an hour.",
+  ),
+}) as unknown as RequestHandler;
+
+/** Limiter for OTP verification — skip successful attempts */
+export const verifyOtpLimiter: RequestHandler = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  statusCode: StatusCodes.TOO_MANY_REQUESTS,
+  message: rateLimitResponse(
+    "Too many verification attempts. Please try again later.",
+  ),
+  skipSuccessfulRequests: true, // don't count successful OTP verifications
+}) as unknown as RequestHandler;
+
 /** Strict limiter for sensitive endpoints (password reset, OTP) */
 export const strictLimiter: RequestHandler = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
