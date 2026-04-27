@@ -202,35 +202,51 @@ export async function verifyOtp(
   await redis.del(otpKey, attemptsKey);
 
   // Upsert user: create on first login, update isVerified on subsequent ones
-  let user = await prisma.user.findUnique({ where: { phone } });
-  if (!user) {
-    user = await prisma.user.create({
-      data: { phone, isVerified: true, role: "CUSTOMER" },
-    });
-  } else if (!user.isActive) {
-    throw new AppError(
-      "Your account has been deactivated. Contact support.",
-      403,
+  try {
+    let user = await prisma.user.findUnique({ where: { phone } });
+    if (!user) {
+      user = await prisma.user.create({
+        data: { phone, isVerified: true, role: "CUSTOMER" },
+      });
+    } else if (!user.isActive) {
+      throw new AppError(
+        "Your account has been deactivated. Contact support.",
+        403,
+      );
+    } else if (!user.isVerified) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { isVerified: true },
+      });
+    }
+
+    const tokens = await issueTokens(user);
+
+    // Strip passwordHash from the returned user object
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { passwordHash: _ph, ...safeUser } = user;
+
+    console.log(
+      `\n${"=".repeat(60)}\n✅ [OTP VERIFIED SUCCESSFULLY]\nPhone: ${phone}\nUser: ${user.name || "New User"}\nStatus: ${user.name ? "RETURNING" : "NEW"}\n${"=".repeat(60)}\n`,
     );
-  } else if (!user.isVerified) {
-    user = await prisma.user.update({
-      where: { id: user.id },
-      data: { isVerified: true },
-    });
+    logger.info(
+      `✅ [OTP Verified] Phone: ${phone}, User: ${user.id}, isNew: ${!user.name}`,
+    );
+
+    return { user: safeUser as SafeUser, tokens };
+  } catch (error: any) {
+    // Handle database connection errors
+    if (
+      error.code === "P1001" ||
+      error.message?.includes("Can't reach database server")
+    ) {
+      logger.error("Database connection error during OTP verification", error);
+      throw new AppError(
+        "Service temporarily unavailable. Please try again in a moment.",
+        503,
+      );
+    }
+    // Re-throw other errors
+    throw error;
   }
-
-  const tokens = await issueTokens(user);
-
-  // Strip passwordHash from the returned user object
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { passwordHash: _ph, ...safeUser } = user;
-
-  console.log(
-    `\n${"=".repeat(60)}\n✅ [OTP VERIFIED SUCCESSFULLY]\nPhone: ${phone}\nUser: ${user.name || "New User"}\nStatus: ${user.name ? "RETURNING" : "NEW"}\n${"=".repeat(60)}\n`,
-  );
-  logger.info(
-    `✅ [OTP Verified] Phone: ${phone}, User: ${user.id}, isNew: ${!user.name}`,
-  );
-
-  return { user: safeUser as SafeUser, tokens };
 }

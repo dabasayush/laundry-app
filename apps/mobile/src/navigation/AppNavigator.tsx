@@ -5,12 +5,17 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuth } from "@/context/AuthContext";
+import { useCartStore } from "@/store/cartStore";
 import { LoginScreen } from "@/screens/auth/LoginScreen";
 import { OtpScreen } from "@/screens/auth/OtpScreen";
 import { OnboardingScreen } from "@/screens/auth/OnboardingScreen";
 import { HomeScreen } from "@/screens/home/HomeScreen";
 import { OrdersScreen } from "@/screens/orders/OrdersScreen";
 import { ProfileScreen } from "@/screens/profile/ProfileScreen";
+import { ServicesScreen } from "@/screens/services/ServicesScreen";
+import { ServiceDetailScreen } from "@/screens/services/ServiceDetailScreen";
+import { CartScreen } from "@/screens/cart/CartScreen";
+import OrderSummaryScreenWithState from "@/screens/checkout/OrderSummaryScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -93,6 +98,52 @@ function AuthStack() {
   );
 }
 
+function ServicesStack() {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Stack.Screen
+        name="ServicesList"
+        component={ServicesScreen}
+        options={{ animationTypeForReplace: undefined }}
+      />
+      <Stack.Screen name="ServiceDetail" component={ServiceDetailScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function CartBadge() {
+  const itemCount = useCartStore((state) => state.itemCount());
+  return itemCount > 0 ? (
+    <View
+      style={{
+        position: "absolute",
+        right: -6,
+        top: -4,
+        backgroundColor: "#EF4444",
+        borderRadius: 8,
+        width: 18,
+        height: 18,
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <Text
+        style={{
+          color: "white",
+          fontSize: 10,
+          fontWeight: "700",
+        }}
+      >
+        {itemCount > 9 ? "9+" : itemCount}
+      </Text>
+    </View>
+  ) : null;
+}
+
 function HomeTabs() {
   const COLORS = {
     primary: "#1F4D3A",
@@ -135,7 +186,7 @@ function HomeTabs() {
       />
       <Tab.Screen
         name="ServicesTab"
-        component={HomeScreen}
+        component={ServicesStack}
         options={{
           tabBarLabel: "Services",
           tabBarIcon: ({ color }) => (
@@ -145,13 +196,16 @@ function HomeTabs() {
       />
       <Tab.Screen
         name="CartTab"
-        component={HomeScreen}
-        options={{
+        component={CartScreen}
+        options={({ navigation }) => ({
           tabBarLabel: "Cart",
           tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="cart" size={24} color={color} />
+            <View>
+              <MaterialCommunityIcons name="cart" size={24} color={color} />
+              <CartBadge />
+            </View>
           ),
-        }}
+        })}
       />
       <Tab.Screen
         name="OrdersTab"
@@ -208,18 +262,45 @@ function AppNavigator() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
         {isAuthenticated ? (
           <>
-            {console.log("[AppNavigator] Rendering HomeTabs (authenticated)")}
-            <Stack.Screen name="App" component={HomeTabs} />
+            {console.log("[AppNavigator] Rendering AppStack (authenticated)")}
+            <Stack.Group screenOptions={{ presentation: "card" }}>
+              <Stack.Screen
+                name="App"
+                component={HomeTabs}
+                options={{ animationTypeForReplace: undefined }}
+              />
+            </Stack.Group>
+            <Stack.Group
+              screenOptions={{
+                presentation: "modal",
+              }}
+            >
+              <Stack.Screen
+                name="OrderSummary"
+                component={OrderSummaryScreenWithState}
+                options={{
+                  animationTypeForReplace: undefined,
+                }}
+              />
+            </Stack.Group>
           </>
         ) : (
           <>
             {console.log(
               "[AppNavigator] Rendering AuthStack (not authenticated)",
             )}
-            <Stack.Screen name="Auth" component={AuthStack} />
+            <Stack.Screen
+              name="Auth"
+              component={AuthStack}
+              options={{ animationTypeForReplace: undefined }}
+            />
           </>
         )}
       </Stack.Navigator>

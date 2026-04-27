@@ -79,6 +79,9 @@ export const adminApi = {
   cancelOrder: (id: string): Promise<Order> =>
     adminApiClient.post(`/orders/${id}/cancel`).then((r) => r.data.data),
 
+  cancelOrderAdmin: (id: string): Promise<Order> =>
+    adminApiClient.post(`/orders/${id}/cancel-admin`).then((r) => r.data.data),
+
   // ── Users ───────────────────────────────────────────────────────────────────
 
   listUsers: (params?: {

@@ -1,0 +1,1474 @@
+{
+  "api_endpoints": {
+    "authentication": [
+      {
+        "method": "POST",
+        "path": "/auth/register",
+        "description": "Register new customer with phone",
+        "auth": "None",
+        "request": {
+          "phone": "string (unique)",
+          "name": "string (optional)"
+        },
+        "response": {
+          "user": "User object",
+          "tokens": {
+            "accessToken": "string (15m expiry)",
+            "refreshToken": "string (7d expiry)"
+          }
+        },
+        "mobile_uses": true,
+        "admin_uses": false
+      },
+      {
+        "method": "POST",
+        "path": "/auth/send-otp",
+        "description": "Send OTP to phone number",
+        "auth": "None",
+        "request": {
+          "phone": "string"
+        },
+        "response": {
+          "message": "OTP sent successfully"
+        },
+        "mobile_uses": true,
+        "admin_uses": false
+      },
+      {
+        "method": "POST",
+        "path": "/auth/verify-otp",
+        "description": "Verify OTP and authenticate user",
+        "auth": "None",
+        "request": {
+          "phone": "string",
+          "otp": "string (6 digits)"
+        },
+        "response": {
+          "user": "User object",
+          "tokens": {
+            "accessToken": "string",
+            "refreshToken": "string"
+          }
+        },
+        "mobile_uses": true,
+        "admin_uses": false
+      },
+      {
+        "method": "POST",
+        "path": "/auth/refresh",
+        "description": "Refresh expired access token",
+        "auth": "None",
+        "request": {
+          "refreshToken": "string"
+        },
+        "response": {
+          "accessToken": "string (new)"
+        },
+        "mobile_uses": true,
+        "admin_uses": true
+      },
+      {
+        "method": "POST",
+        "path": "/auth/logout",
+        "description": "Logout and invalidate tokens",
+        "auth": "Bearer JWT",
+        "request": {},
+        "response": {
+          "message": "Logged out successfully"
+        },
+        "mobile_uses": true,
+        "admin_uses": true
+      },
+      {
+        "method": "POST",
+        "path": "/auth/driver/login",
+        "description": "Driver login with phone and password",
+        "auth": "None",
+        "request": {
+          "phone": "string",
+          "password": "string"
+        },
+        "response": {
+          "user": "Driver object",
+          "tokens": {
+            "accessToken": "string",
+            "refreshToken": "string"
+          }
+        },
+        "mobile_uses": true,
+        "admin_uses": false
+      }
+    ],
+    "services": [
+      {
+        "method": "GET",
+        "path": "/api/v1/services",
+        "description": "List all laundry services with items",
+        "auth": "None",
+        "query_params": {
+          "page": "number (default: 1)",
+          "limit": "number (default: 10)",
+          "isActive": "boolean (optional)"
+        },
+        "response": {
+          "pagination": {
+            "page": "number",
+            "limit": "number",
+            "total": "number"
+          },
+          "data": [
+            {
+              "id": "uuid",
+              "name": "string (e.g., 'Regular Wash')",
+              "description": "string",
+              "imageUrl": "string",
+              "isActive": "boolean",
+              "items": [
+                {
+                  "id": "uuid",
+                  "name": "string (e.g., 'Shirt')",
+                  "price": "decimal",
+                  "serviceId": "uuid",
+                  "itemId": "uuid (reference to global Item)"
+                }
+              ],
+              "createdAt": "ISO datetime",
+              "updatedAt": "ISO datetime"
+            }
+          ]
+        },
+        "mobile_uses": true,
+        "admin_uses": true
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/services/:id",
+        "description": "Get single service with all items",
+        "auth": "None",
+        "response": {
+          "id": "uuid",
+          "name": "string",
+          "description": "string",
+          "imageUrl": "string",
+          "isActive": "boolean",
+          "items": [
+            {
+              "id": "uuid",
+              "name": "string",
+              "price": "decimal",
+              "serviceId": "uuid",
+              "itemId": "uuid"
+            }
+          ],
+          "createdAt": "ISO datetime",
+          "updatedAt": "ISO datetime"
+        },
+        "mobile_uses": true,
+        "admin_uses": true
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/services",
+        "description": "Create new service (admin only)",
+        "auth": "Bearer JWT (ADMIN)",
+        "request": {
+          "name": "string (unique, max 100 chars)",
+          "description": "string (optional)",
+          "imageUrl": "string (optional)",
+          "isActive": "boolean (optional, default: true)"
+        },
+        "response": {
+          "id": "uuid",
+          "name": "string",
+          "description": "string",
+          "imageUrl": "string",
+          "isActive": "boolean",
+          "items": [],
+          "createdAt": "ISO datetime",
+          "updatedAt": "ISO datetime"
+        },
+        "mobile_uses": false,
+        "admin_uses": true
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/v1/services/:id",
+        "description": "Update service (admin only)",
+        "auth": "Bearer JWT (ADMIN)",
+        "request": {
+          "name": "string (optional)",
+          "description": "string (optional)",
+          "imageUrl": "string (optional)",
+          "isActive": "boolean (optional)"
+        },
+        "response": "Updated Service object",
+        "mobile_uses": false,
+        "admin_uses": true
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/v1/services/:id",
+        "description": "Delete service (admin only, soft delete via isActive)",
+        "auth": "Bearer JWT (ADMIN)",
+        "response": "204 No Content",
+        "mobile_uses": false,
+        "admin_uses": true
+      }
+    ],
+    "service_items": [
+      {
+        "method": "GET",
+        "path": "/api/v1/service-items",
+        "description": "List service items with optional service filter",
+        "auth": "None",
+        "query_params": {
+          "page": "number (default: 1)",
+          "limit": "number (default: 10)",
+          "serviceId": "uuid (optional, filter by service)",
+          "isActive": "boolean (optional)"
+        },
+        "response": {
+          "pagination": {
+            "page": "number",
+            "limit": "number",
+            "total": "number"
+          },
+          "data": [
+            {
+              "id": "uuid",
+              "serviceId": "uuid",
+              "itemId": "uuid (optional, reference to global Item)",
+              "name": "string (e.g., 'Shirt Premium')",
+              "price": "decimal (multipleOf 0.01)",
+              "isActive": "boolean",
+              "createdAt": "ISO datetime",
+              "updatedAt": "ISO datetime"
+            }
+          ]
+        },
+        "mobile_uses": true,
+        "admin_uses": true
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/service-items/:id",
+        "description": "Get single service item",
+        "auth": "None",
+        "response": "ServiceItem object",
+        "mobile_uses": false,
+        "admin_uses": true
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/service-items",
+        "description": "Create new service item (admin only)",
+        "auth": "Bearer JWT (ADMIN)",
+        "request": {
+          "serviceId": "uuid (required, must exist)",
+          "itemId": "uuid (optional, reference to global Item)",
+          "name": "string (required, max 100 chars, unique per service)",
+          "price": "decimal (required, > 0, multipleOf 0.01)",
+          "isActive": "boolean (optional, default: true)"
+        },
+        "response": "Created ServiceItem object",
+        "mobile_uses": false,
+        "admin_uses": true
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/v1/service-items/:id",
+        "description": "Update service item (admin only)",
+        "auth": "Bearer JWT (ADMIN)",
+        "request": {
+          "name": "string (optional)",
+          "price": "decimal (optional)",
+          "isActive": "boolean (optional)",
+          "itemId": "uuid (optional)"
+        },
+        "response": "Updated ServiceItem object",
+        "mobile_uses": false,
+        "admin_uses": true
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/v1/service-items/:id",
+        "description": "Delete service item (admin only)",
+        "auth": "Bearer JWT (ADMIN)",
+        "response": "204 No Content",
+        "mobile_uses": false,
+        "admin_uses": true
+      }
+    ],
+    "orders": [
+      {
+        "method": "POST",
+        "path": "/api/v1/orders",
+        "description": "Create new order with items and payment method",
+        "auth": "Bearer JWT (CUSTOMER)",
+        "request": {
+          "items": [
+            {
+              "serviceItemId": "uuid",
+              "quantity": "integer (1-100)"
+            }
+          ],
+          "paymentMethod": "CASH | UPI",
+          "addressId": "uuid (optional)",
+          "offerId": "uuid (optional, coupon code)",
+          "pickupOption": "MORNING | EVENING | INSTANT (optional, default: MORNING)",
+          "pickupAddressText": "string (optional, max 400 chars)",
+          "notes": "string (optional, max 500 chars)"
+        },
+        "response": {
+          "id": "uuid",
+          "userId": "uuid",
+          "driverId": "uuid (null initially)",
+          "addressId": "uuid",
+          "offerId": "uuid (if coupon applied)",
+          "totalAmount": "decimal",
+          "discountAmount": "decimal (auto-applied best offer or manual)",
+          "finalAmount": "decimal",
+          "paymentMethod": "CASH | UPI",
+          "paymentStatus": "PENDING | COLLECTED | SETTLED",
+          "status": "PENDING",
+          "items": [
+            {
+              "id": "uuid",
+              "orderId": "uuid",
+              "serviceItemId": "uuid",
+              "quantity": "integer",
+              "unitPrice": "decimal",
+              "subtotal": "decimal",
+              "serviceItem": {
+                "id": "uuid",
+                "name": "string",
+                "price": "decimal",
+                "service": {
+                  "id": "uuid",
+                  "name": "string"
+                }
+              }
+            }
+          ],
+          "user": {
+            "id": "uuid",
+            "name": "string",
+            "phone": "string"
+          },
+          "driver": null,
+          "address": "Address object (if provided)",
+          "rating": null,
+          "createdAt": "ISO datetime",
+          "updatedAt": "ISO datetime"
+        },
+        "mobile_uses": true,
+        "admin_uses": false
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/orders",
+        "description": "List orders (role-aware: customer sees own, admin sees all, driver sees assigned)",
+        "auth": "Bearer JWT",
+        "query_params": {
+          "page": "number (default: 1)",
+          "limit": "number (default: 10, max: 50)",
+          "status": "PENDING | PICKUP_ASSIGNED | PICKED_UP | PROCESSING | OUT_FOR_DELIVERY | DELIVERED | CANCELLED (optional)"
+        },
+        "response": {
+          "pagination": {
+            "page": "number",
+            "limit": "number",
+            "total": "number"
+          },
+          "data": [
+            {
+              "id": "uuid",
+              "userId": "uuid",
+              "status": "OrderStatus enum",
+              "totalAmount": "decimal",
+              "finalAmount": "decimal",
+              "paymentStatus": "PaymentStatus enum",
+              "items": [
+                {
+                  "id": "uuid",
+                  "orderId": "uuid",
+                  "serviceItemId": "uuid",
+                  "quantity": "integer",
+                  "unitPrice": "decimal",
+                  "subtotal": "decimal"
+                }
+              ],
+              "createdAt": "ISO datetime",
+              "updatedAt": "ISO datetime"
+            }
+          ]
+        },
+        "mobile_uses": true,
+        "admin_uses": true
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/orders/:id",
+        "description": "Get full order detail with all relations",
+        "auth": "Bearer JWT",
+        "response": {
+          "id": "uuid",
+          "userId": "uuid",
+          "driverId": "uuid",
+          "addressId": "uuid",
+          "offerId": "uuid",
+          "totalAmount": "decimal",
+          "discountAmount": "decimal",
+          "finalAmount": "decimal",
+          "paymentMethod": "CASH | UPI",
+          "paymentStatus": "PENDING | COLLECTED | SETTLED",
+          "status": "OrderStatus enum",
+          "notes": "string (includes pickup option + instant fee + custom notes)",
+          "items": [
+            {
+              "id": "uuid",
+              "orderId": "uuid",
+              "serviceItemId": "uuid",
+              "quantity": "integer",
+              "unitPrice": "decimal",
+              "subtotal": "decimal",
+              "serviceItem": {
+                "id": "uuid",
+                "name": "string",
+                "price": "decimal",
+                "service": {
+                  "id": "uuid",
+                  "name": "string"
+                }
+              }
+            }
+          ],
+          "user": {
+            "id": "uuid",
+            "name": "string",
+            "phone": "string"
+          },
+          "driver": {
+            "id": "uuid",
+            "name": "string",
+            "phone": "string",
+            "vehicleNumber": "string"
+          },
+          "address": "Address object",
+          "rating": {
+            "rating": "number (1-5)",
+            "comment": "string",
+            "createdAt": "ISO datetime"
+          },
+          "createdAt": "ISO datetime",
+          "updatedAt": "ISO datetime"
+        },
+        "mobile_uses": true,
+        "admin_uses": true
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/v1/orders/:id/status",
+        "description": "Update order status (admin/driver only, validates transitions)",
+        "auth": "Bearer JWT (ADMIN | DRIVER)",
+        "request": {
+          "status": "OrderStatus enum",
+          "driverId": "uuid (optional, assign driver when PICKUP_ASSIGNED)"
+        },
+        "response": "Updated Order object",
+        "transitions": {
+          "PENDING": ["PICKUP_ASSIGNED", "CANCELLED"],
+          "PICKUP_ASSIGNED": ["PICKED_UP", "CANCELLED"],
+          "PICKED_UP": ["PROCESSING"],
+          "PROCESSING": ["OUT_FOR_DELIVERY"],
+          "OUT_FOR_DELIVERY": ["DELIVERED"],
+          "DELIVERED": [],
+          "CANCELLED": []
+        },
+        "mobile_uses": false,
+        "admin_uses": true
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/v1/orders/:id/pickup",
+        "description": "Change pickup address while order is PENDING",
+        "auth": "Bearer JWT (CUSTOMER)",
+        "request": {
+          "addressId": "uuid"
+        },
+        "response": "Updated Order object",
+        "mobile_uses": false,
+        "admin_uses": false
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/orders/:id/items",
+        "description": "Add more items to PENDING order (clears existing discount)",
+        "auth": "Bearer JWT (CUSTOMER)",
+        "request": {
+          "items": [
+            {
+              "serviceItemId": "uuid",
+              "quantity": "integer (1-100)"
+            }
+          ]
+        },
+        "response": "Updated Order object",
+        "mobile_uses": false,
+        "admin_uses": false
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/orders/:id/cancel",
+        "description": "Cancel order (PENDING or PICKUP_ASSIGNED only)",
+        "auth": "Bearer JWT (CUSTOMER | ADMIN)",
+        "request": {
+          "cancellationReason": "CUSTOMER_REQUEST | OUT_OF_STOCK | DRIVER_UNAVAILABLE | TECHNICAL_ISSUE | OTHER (optional)"
+        },
+        "response": "Updated Order object with CANCELLED status",
+        "mobile_uses": true,
+        "admin_uses": true
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/v1/orders/:id/collect-payment",
+        "description": "Mark cash/UPI payment as collected (driver only)",
+        "auth": "Bearer JWT (DRIVER)",
+        "response": "Updated Order object with COLLECTED paymentStatus",
+        "mobile_uses": false,
+        "admin_uses": false
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/v1/orders/batch-status",
+        "description": "Update multiple order statuses (admin/driver only)",
+        "auth": "Bearer JWT (ADMIN | DRIVER)",
+        "request": {
+          "orderIds": ["uuid"],
+          "status": "OrderStatus enum",
+          "driverId": "uuid (optional)"
+        },
+        "response": {
+          "updated": "number",
+          "failed": [
+            {
+              "orderId": "uuid",
+              "reason": "string"
+            }
+          ]
+        },
+        "mobile_uses": false,
+        "admin_uses": true
+      }
+    ],
+    "offers_coupons": [
+      {
+        "method": "GET",
+        "path": "/api/v1/offers",
+        "description": "List all active coupon offers",
+        "auth": "None",
+        "query_params": {
+          "page": "number (default: 1)",
+          "limit": "number (default: 10)",
+          "isActive": "boolean (optional)"
+        },
+        "response": "Paginated Offer objects with discount details",
+        "mobile_uses": true,
+        "admin_uses": true
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/offers/code/:code",
+        "description": "Lookup offer by coupon code",
+        "auth": "None",
+        "response": "Offer object or 404",
+        "mobile_uses": true,
+        "admin_uses": false
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/offers/preview",
+        "description": "Preview discount without creating order",
+        "auth": "None",
+        "request": {
+          "code": "string (coupon code)",
+          "orderTotal": "decimal"
+        },
+        "response": {
+          "isValid": "boolean",
+          "discountAmount": "decimal",
+          "finalAmount": "decimal (orderTotal - discount)"
+        },
+        "mobile_uses": true,
+        "admin_uses": false
+      }
+    ],
+    "addresses": [
+      {
+        "method": "GET",
+        "path": "/api/v1/addresses",
+        "description": "Get all user addresses",
+        "auth": "Bearer JWT",
+        "response": [
+          {
+            "id": "uuid",
+            "userId": "uuid",
+            "label": "string (e.g., 'Home', 'Office')",
+            "line1": "string",
+            "line2": "string",
+            "city": "string",
+            "state": "string",
+            "pincode": "string",
+            "lat": "decimal (optional)",
+            "lng": "decimal (optional)",
+            "isDefault": "boolean",
+            "createdAt": "ISO datetime",
+            "updatedAt": "ISO datetime"
+          }
+        ],
+        "mobile_uses": true,
+        "admin_uses": false
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/addresses",
+        "description": "Create new address",
+        "auth": "Bearer JWT",
+        "request": {
+          "label": "string (e.g., 'Home')",
+          "line1": "string",
+          "line2": "string (optional)",
+          "city": "string",
+          "state": "string",
+          "pincode": "string",
+          "lat": "decimal (optional)",
+          "lng": "decimal (optional)",
+          "isDefault": "boolean (optional)"
+        },
+        "response": "Created Address object",
+        "mobile_uses": true,
+        "admin_uses": false
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/addresses/:id",
+        "description": "Get single address",
+        "auth": "Bearer JWT",
+        "response": "Address object",
+        "mobile_uses": false,
+        "admin_uses": false
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/v1/addresses/:id",
+        "description": "Update address",
+        "auth": "Bearer JWT",
+        "request": "Partial Address object fields",
+        "response": "Updated Address object",
+        "mobile_uses": true,
+        "admin_uses": false
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/v1/addresses/:id",
+        "description": "Delete address",
+        "auth": "Bearer JWT",
+        "response": "204 No Content",
+        "mobile_uses": true,
+        "admin_uses": false
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/addresses/validate-pincode/:pincode",
+        "description": "Check if pincode is in service area",
+        "auth": "None",
+        "response": {
+          "isValid": "boolean",
+          "pincode": "string",
+          "message": "string (e.g., 'Service available in this area')"
+        },
+        "mobile_uses": true,
+        "admin_uses": false
+      }
+    ],
+    "slots": [
+      {
+        "method": "GET",
+        "path": "/api/v1/slots/availability",
+        "description": "Get available pickup/delivery slots",
+        "auth": "None",
+        "query_params": {
+          "date": "ISO date YYYY-MM-DD (optional)",
+          "slotType": "PICKUP | DELIVERY (optional)"
+        },
+        "response": [
+          {
+            "id": "uuid",
+            "date": "ISO date",
+            "startTime": "HH:mm",
+            "endTime": "HH:mm",
+            "capacity": "integer",
+            "bookedCount": "integer",
+            "available": "integer (capacity - bookedCount)",
+            "isActive": "boolean"
+          }
+        ],
+        "mobile_uses": true,
+        "admin_uses": false
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/slots/config",
+        "description": "Get pickup configuration (INSTANT option, fees, etc.)",
+        "auth": "None",
+        "response": {
+          "instantEnabled": "boolean",
+          "instantFee": "decimal",
+          "morningStart": "HH:mm",
+          "morningEnd": "HH:mm",
+          "eveningStart": "HH:mm",
+          "eveningEnd": "HH:mm"
+        },
+        "mobile_uses": true,
+        "admin_uses": false
+      }
+    ],
+    "users": [
+      {
+        "method": "GET",
+        "path": "/api/v1/users/me",
+        "description": "Get logged-in user profile",
+        "auth": "Bearer JWT",
+        "response": {
+          "id": "uuid",
+          "name": "string",
+          "phone": "string",
+          "email": "string",
+          "role": "CUSTOMER | DRIVER | ADMIN",
+          "fcmToken": "string",
+          "isVerified": "boolean",
+          "isActive": "boolean",
+          "totalOrders": "integer",
+          "totalSpent": "decimal",
+          "lastOrderDate": "ISO datetime",
+          "lastLoginAt": "ISO datetime",
+          "createdAt": "ISO datetime",
+          "updatedAt": "ISO datetime"
+        },
+        "mobile_uses": true,
+        "admin_uses": true
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/v1/users/me",
+        "description": "Update user profile",
+        "auth": "Bearer JWT",
+        "request": {
+          "name": "string (optional)",
+          "email": "string (optional)",
+          "fcmToken": "string (optional)"
+        },
+        "response": "Updated User object",
+        "mobile_uses": true,
+        "admin_uses": true
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/users/by-phone",
+        "description": "Get user by phone (for registration check)",
+        "auth": "None",
+        "query_params": {
+          "mobile": "string (phone number)"
+        },
+        "response": "User object or null",
+        "mobile_uses": true,
+        "admin_uses": false
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/users",
+        "description": "List all users (admin only)",
+        "auth": "Bearer JWT (ADMIN)",
+        "query_params": {
+          "page": "number",
+          "limit": "number",
+          "role": "string (optional, filter by role)"
+        },
+        "response": "Paginated User objects",
+        "mobile_uses": false,
+        "admin_uses": true
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/users/:id",
+        "description": "Get user by ID (admin only)",
+        "auth": "Bearer JWT (ADMIN)",
+        "response": "User object",
+        "mobile_uses": false,
+        "admin_uses": true
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/users/:id/block",
+        "description": "Block user (admin only)",
+        "auth": "Bearer JWT (ADMIN)",
+        "response": "Updated User object with isActive: false",
+        "mobile_uses": false,
+        "admin_uses": true
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/users/:id/unblock",
+        "description": "Unblock user (admin only)",
+        "auth": "Bearer JWT (ADMIN)",
+        "response": "Updated User object with isActive: true",
+        "mobile_uses": false,
+        "admin_uses": true
+      }
+    ],
+    "driver_app": [
+      {
+        "method": "POST",
+        "path": "/api/v1/driver-app/login",
+        "description": "Driver login",
+        "auth": "None",
+        "request": {
+          "phone": "string",
+          "password": "string"
+        },
+        "response": {
+          "user": "Driver object",
+          "tokens": {
+            "accessToken": "string",
+            "refreshToken": "string"
+          }
+        },
+        "mobile_uses": true,
+        "admin_uses": false
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/driver-app/profile",
+        "description": "Get driver profile",
+        "auth": "Bearer JWT (DRIVER)",
+        "response": {
+          "id": "uuid",
+          "name": "string",
+          "phone": "string",
+          "vehicleNumber": "string",
+          "vehicleType": "string",
+          "isAvailable": "boolean",
+          "totalDeliveries": "integer",
+          "totalRating": "decimal (0-5)"
+        },
+        "mobile_uses": true,
+        "admin_uses": false
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/driver-app/fcm-token",
+        "description": "Update driver FCM token for push notifications",
+        "auth": "Bearer JWT (DRIVER)",
+        "request": {
+          "fcmToken": "string"
+        },
+        "response": {
+          "message": "FCM token updated"
+        },
+        "mobile_uses": true,
+        "admin_uses": false
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/driver-app/orders",
+        "description": "Get all orders assigned to driver",
+        "auth": "Bearer JWT (DRIVER)",
+        "query_params": {
+          "page": "number (optional)",
+          "limit": "number (optional)",
+          "status": "OrderStatus (optional)"
+        },
+        "response": "Paginated Order objects with full details",
+        "mobile_uses": true,
+        "admin_uses": false
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/v1/driver-app/orders/:orderId/status",
+        "description": "Update order status by driver",
+        "auth": "Bearer JWT (DRIVER)",
+        "request": {
+          "status": "OrderStatus enum"
+        },
+        "response": "Updated Order object",
+        "mobile_uses": true,
+        "admin_uses": false
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/driver-app/earnings",
+        "description": "Get driver earnings history and pending payouts",
+        "auth": "Bearer JWT (DRIVER)",
+        "response": {
+          "totalEarnings": "decimal",
+          "totalDeliveries": "integer",
+          "pendingAmount": "decimal",
+          "paidAmount": "decimal",
+          "earnings": [
+            {
+              "id": "uuid",
+              "orderId": "uuid",
+              "amount": "decimal",
+              "type": "string (DELIVERY, BONUS)",
+              "status": "PENDING | PAID",
+              "earnedAt": "ISO datetime"
+            }
+          ]
+        },
+        "mobile_uses": true,
+        "admin_uses": false
+      }
+    ],
+    "analytics": [
+      {
+        "method": "GET",
+        "path": "/api/v1/analytics/dashboard",
+        "description": "Get dashboard KPI metrics (admin only)",
+        "auth": "Bearer JWT (ADMIN)",
+        "response": {
+          "totalOrders": "integer",
+          "totalRevenue": "decimal",
+          "activeOrders": "integer",
+          "totalCustomers": "integer",
+          "ordersByStatus": [
+            {
+              "status": "OrderStatus",
+              "count": "integer"
+            }
+          ]
+        },
+        "mobile_uses": false,
+        "admin_uses": true
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/analytics/today",
+        "description": "Get today's snapshot (admin only)",
+        "auth": "Bearer JWT (ADMIN)",
+        "response": {
+          "date": "ISO date",
+          "ordersCreated": "integer",
+          "revenue": "decimal",
+          "avgOrderValue": "decimal"
+        },
+        "mobile_uses": false,
+        "admin_uses": true
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/analytics/revenue",
+        "description": "Get revenue report with date range (admin only)",
+        "auth": "Bearer JWT (ADMIN)",
+        "query_params": {
+          "days": "integer (last N days)",
+          "from": "ISO date YYYY-MM-DD",
+          "to": "ISO date YYYY-MM-DD"
+        },
+        "response": {
+          "totalRevenue": "decimal",
+          "period": "string",
+          "dailyBreakdown": [
+            {
+              "date": "ISO date",
+              "revenue": "decimal"
+            }
+          ]
+        },
+        "mobile_uses": false,
+        "admin_uses": true
+      }
+    ],
+    "products": [
+      {
+        "method": "GET",
+        "path": "/api/v1/products",
+        "description": "List products for purchase",
+        "auth": "None",
+        "query_params": {
+          "page": "number",
+          "limit": "number",
+          "isActive": "boolean"
+        },
+        "response": "Paginated Product objects",
+        "mobile_uses": false,
+        "admin_uses": true
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/products",
+        "description": "Create product (admin only)",
+        "auth": "Bearer JWT (ADMIN)",
+        "request": {
+          "name": "string",
+          "description": "string (optional)",
+          "price": "decimal",
+          "imageUrl": "string (optional)",
+          "stock": "integer (optional)",
+          "isActive": "boolean (optional)"
+        },
+        "response": "Created Product object",
+        "mobile_uses": false,
+        "admin_uses": true
+      }
+    ],
+    "banners": [
+      {
+        "method": "GET",
+        "path": "/api/v1/banners",
+        "description": "Get active app banners for display",
+        "auth": "None",
+        "response": [
+          {
+            "id": "uuid",
+            "title": "string",
+            "imageUrl": "string",
+            "isActive": "boolean",
+            "sortOrder": "integer"
+          }
+        ],
+        "mobile_uses": true,
+        "admin_uses": false
+      }
+    ]
+  },
+  "service_structure": {
+    "overview": "Services represent laundry service types (e.g., Regular Wash, Express Wash). Each service has multiple ServiceItems which are pricing entries for different garment types.",
+    "service": {
+      "id": "uuid (primary key)",
+      "name": "string (unique, e.g., 'Regular Wash', 'Premium Wash')",
+      "description": "string (what the service includes)",
+      "imageUrl": "string (Cloudinary URL for service icon)",
+      "isActive": "boolean (soft delete via this flag)",
+      "items": "ServiceItem[] (1-to-many relationship)",
+      "createdAt": "ISO datetime",
+      "updatedAt": "ISO datetime"
+    },
+    "service_item": {
+      "id": "uuid (primary key)",
+      "serviceId": "uuid (foreign key to Service)",
+      "itemId": "uuid (optional, reference to global Item master)",
+      "name": "string (e.g., 'Shirt', 'Pant', 'Shirt Premium')",
+      "price": "decimal (per unit, multipleOf 0.01)",
+      "isActive": "boolean",
+      "createdAt": "ISO datetime",
+      "updatedAt": "ISO datetime",
+      "unique_constraint": "[serviceId, name]"
+    },
+    "example_data_flow": {
+      "step_1_admin_creates_service": {
+        "endpoint": "POST /api/v1/services",
+        "payload": {
+          "name": "Regular Wash",
+          "description": "Standard laundry washing service",
+          "imageUrl": "https://cloudinary.com/...",
+          "isActive": true
+        },
+        "response": {
+          "id": "550e8400-e29b-41d4-a716-446655440000",
+          "name": "Regular Wash",
+          "items": []
+        }
+      },
+      "step_2_admin_adds_items_to_service": {
+        "endpoint": "POST /api/v1/service-items",
+        "payload_1": {
+          "serviceId": "550e8400-e29b-41d4-a716-446655440000",
+          "name": "Shirt",
+          "price": 50.0,
+          "isActive": true
+        },
+        "payload_2": {
+          "serviceId": "550e8400-e29b-41d4-a716-446655440000",
+          "name": "Pant",
+          "price": 75.0,
+          "isActive": true
+        },
+        "response": "ServiceItem objects"
+      },
+      "step_3_mobile_fetches_services": {
+        "endpoint": "GET /api/v1/services?page=1&limit=10",
+        "response": {
+          "data": [
+            {
+              "id": "550e8400-e29b-41d4-a716-446655440000",
+              "name": "Regular Wash",
+              "description": "Standard laundry washing service",
+              "imageUrl": "https://cloudinary.com/...",
+              "isActive": true,
+              "items": [
+                {
+                  "id": "660e8400-e29b-41d4-a716-446655440001",
+                  "serviceId": "550e8400-e29b-41d4-a716-446655440000",
+                  "name": "Shirt",
+                  "price": 50.0
+                },
+                {
+                  "id": "660e8400-e29b-41d4-a716-446655440002",
+                  "serviceId": "550e8400-e29b-41d4-a716-446655440000",
+                  "name": "Pant",
+                  "price": 75.0
+                }
+              ]
+            }
+          ],
+          "pagination": {
+            "page": 1,
+            "limit": 10,
+            "total": 1
+          }
+        }
+      },
+      "step_4_mobile_creates_order": {
+        "endpoint": "POST /api/v1/orders",
+        "payload": {
+          "items": [
+            {
+              "serviceItemId": "660e8400-e29b-41d4-a716-446655440001",
+              "quantity": 2
+            },
+            {
+              "serviceItemId": "660e8400-e29b-41d4-a716-446655440002",
+              "quantity": 1
+            }
+          ],
+          "paymentMethod": "CASH",
+          "addressId": "770e8400-e29b-41d4-a716-446655440003",
+          "pickupOption": "MORNING",
+          "notes": "Be gentle with delicates"
+        },
+        "order_calculation": {
+          "shirt_qty_2": "2 × 50.00 = 100.00",
+          "pant_qty_1": "1 × 75.00 = 75.00",
+          "totalAmount": 175.0,
+          "discountAmount": "0 (if no offer) or auto-best-offer",
+          "finalAmount": "175.00 - discount"
+        }
+      }
+    }
+  },
+  "order_flow": {
+    "order_lifecycle": {
+      "status_machine": {
+        "PENDING": {
+          "allowed_transitions": ["PICKUP_ASSIGNED", "CANCELLED"],
+          "description": "Order created, waiting for admin to assign pickup"
+        },
+        "PICKUP_ASSIGNED": {
+          "allowed_transitions": ["PICKED_UP", "CANCELLED"],
+          "description": "Driver has been assigned to pickup laundry"
+        },
+        "PICKED_UP": {
+          "allowed_transitions": ["PROCESSING"],
+          "description": "Driver has collected laundry from customer"
+        },
+        "PROCESSING": {
+          "allowed_transitions": ["OUT_FOR_DELIVERY"],
+          "description": "Laundry is being washed and pressed at facility"
+        },
+        "OUT_FOR_DELIVERY": {
+          "allowed_transitions": ["DELIVERED"],
+          "description": "Driver is on the way to deliver clean laundry"
+        },
+        "DELIVERED": {
+          "allowed_transitions": [],
+          "description": "Order completed, customer received laundry"
+        },
+        "CANCELLED": {
+          "allowed_transitions": [],
+          "description": "Order cancelled, final state"
+        }
+      },
+      "payment_status": {
+        "PENDING": "Payment not yet collected",
+        "COLLECTED": "Cash/UPI collected from customer",
+        "SETTLED": "Amount settled/transferred to business"
+      }
+    },
+    "create_order_request": {
+      "required_fields": {
+        "items": "Array of {serviceItemId, quantity}",
+        "paymentMethod": "CASH | UPI"
+      },
+      "optional_fields": {
+        "addressId": "UUID of saved address (if not provided, address must be in notes)",
+        "offerId": "UUID of coupon to apply (if not provided, best offer auto-applied)",
+        "pickupOption": "MORNING (default) | EVENING | INSTANT",
+        "pickupAddressText": "Free-form address text if no addressId",
+        "notes": "Special instructions"
+      }
+    },
+    "order_response": {
+      "pricing": {
+        "totalAmount": "Sum of all items (serviceItemPrice × quantity)",
+        "discountAmount": "Auto-applied best offer or manual coupon",
+        "pickupSurcharge": "Additional fee if INSTANT option selected",
+        "finalAmount": "totalAmount - discountAmount + pickupSurcharge",
+        "payment_method": "CASH (on delivery) | UPI"
+      },
+      "items_detail": [
+        {
+          "serviceItemId": "Which laundry item this is (Shirt, Pant, etc.)",
+          "quantity": "How many of this item",
+          "unitPrice": "Price per unit from ServiceItem",
+          "subtotal": "unitPrice × quantity",
+          "serviceItem": {
+            "service": {
+              "id": "Which service (Regular Wash, Express Wash, etc.)",
+              "name": "Service name"
+            }
+          }
+        }
+      ]
+    },
+    "timeline_example": {
+      "hour_0": {
+        "status": "PENDING",
+        "action": "Customer creates order, payment not collected yet"
+      },
+      "hour_2": {
+        "status": "PICKUP_ASSIGNED",
+        "action": "Admin assigns driver via PATCH /api/v1/orders/:id/status",
+        "request": {
+          "status": "PICKUP_ASSIGNED",
+          "driverId": "driver-uuid"
+        }
+      },
+      "hour_4": {
+        "status": "PICKED_UP",
+        "action": "Driver completes pickup and updates status",
+        "request": {
+          "status": "PICKED_UP"
+        }
+      },
+      "hour_24": {
+        "status": "PROCESSING",
+        "action": "Laundry is being processed at facility"
+      },
+      "hour_36": {
+        "status": "OUT_FOR_DELIVERY",
+        "action": "Driver is on the way to deliver"
+      },
+      "hour_40": {
+        "status": "DELIVERED",
+        "payment_status": "PENDING",
+        "action": "Driver delivers and collects CASH/UPI payment",
+        "request": {
+          "path": "PATCH /api/v1/orders/:id/collect-payment",
+          "auth": "Driver JWT"
+        }
+      },
+      "post_delivery": {
+        "status": "DELIVERED",
+        "payment_status": "COLLECTED",
+        "action": "Customer can rate the order"
+      }
+    }
+  },
+  "authentication": {
+    "jwt_tokens": {
+      "accessToken": {
+        "expiry": "15 minutes",
+        "usage": "Include in Authorization: Bearer {token} header",
+        "refresh": "When expired, use refreshToken to get new accessToken"
+      },
+      "refreshToken": {
+        "expiry": "7 days",
+        "usage": "POST /auth/refresh with refreshToken in body",
+        "storage": "Securely store in AsyncStorage (mobile) or secure cookies (web)"
+      }
+    },
+    "user_roles": {
+      "CUSTOMER": "Regular users who place orders",
+      "DRIVER": "Delivery personnel who pickup and deliver orders",
+      "ADMIN": "Admin who manages services, items, offers, drivers"
+    },
+    "authentication_flows": {
+      "customer_otp": {
+        "step_1": "POST /auth/send-otp {phone: '9876543210'}",
+        "step_2": "User receives OTP on phone",
+        "step_3": "POST /auth/verify-otp {phone: '9876543210', otp: '123456'}",
+        "step_4": "Response includes user object + accessToken + refreshToken"
+      },
+      "driver_credentials": {
+        "step_1": "Admin creates driver with phone and temporary password",
+        "step_2": "Driver POST /auth/driver/login {phone, password}",
+        "step_3": "Response includes driver object + tokens"
+      },
+      "admin_login": {
+        "step_1": "POST /auth/login {phone, password}",
+        "step_2": "Response includes admin user object + tokens"
+      }
+    }
+  },
+  "gaps": [
+    {
+      "area": "Mobile - Services Screen",
+      "issue": "ServiceDetailScreen exists but not fully implemented",
+      "impact": "Mobile cannot display individual service details",
+      "required_action": "Implement GET /services/:id call and detail page UI",
+      "endpoint": "GET /api/v1/services/:id"
+    },
+    {
+      "area": "Mobile - Order Creation",
+      "issue": "PlaceOrderScreen not implemented",
+      "impact": "Mobile cannot create orders through UI",
+      "required_action": "Build order creation screen, call POST /api/v1/orders",
+      "endpoint": "POST /api/v1/orders"
+    },
+    {
+      "area": "Mobile - Order Tracking",
+      "issue": "OrderDetailScreen not showing live status updates",
+      "impact": "Customer cannot track order progress in real-time",
+      "required_action": "Implement polling/WebSocket for live order status, display order timeline",
+      "endpoint": "GET /api/v1/orders/:id"
+    },
+    {
+      "area": "Mobile - Payment Collection",
+      "issue": "Payment integration not connected (CASH mode only)",
+      "impact": "Driver cannot collect UPI payments programmatically",
+      "required_action": "Integrate payment gateway, call PATCH /orders/:id/collect-payment",
+      "endpoint": "POST /api/v1/payments/intent"
+    },
+    {
+      "area": "Mobile - Push Notifications",
+      "issue": "Firebase FCM setup incomplete",
+      "impact": "Users don't receive order status updates",
+      "required_action": "Setup FCM tokens, implement background notification handlers",
+      "endpoint": "POST /api/v1/users/me (fcmToken field)"
+    },
+    {
+      "area": "Mobile - Offers/Coupons",
+      "issue": "Coupon preview not integrated into checkout",
+      "impact": "Customers cannot apply coupon codes during order creation",
+      "required_action": "Add offer preview screen before order confirmation",
+      "endpoint": "POST /api/v1/offers/preview"
+    },
+    {
+      "area": "Mobile - Slot Selection",
+      "issue": "Slot availability not shown during order creation",
+      "impact": "Customer cannot choose preferred pickup time",
+      "required_action": "Implement slot picker UI, fetch slots before order",
+      "endpoint": "GET /api/v1/slots/availability"
+    },
+    {
+      "area": "Admin - Driver Management",
+      "issue": "Driver document verification workflow incomplete",
+      "impact": "Cannot verify driver licenses/documents",
+      "required_action": "Implement document upload and verification UI",
+      "endpoints": [
+        "POST /api/v1/drivers/:driverId/documents",
+        "POST /api/v1/drivers/documents/:documentId/verify"
+      ]
+    },
+    {
+      "area": "Admin - Analytics",
+      "issue": "Analytics dashboard not fully wired",
+      "impact": "Admin cannot see business metrics and trends",
+      "required_action": "Display dashboard with order trends, revenue charts, KPIs",
+      "endpoints": [
+        "GET /api/v1/analytics/dashboard",
+        "GET /api/v1/analytics/order-trends",
+        "GET /api/v1/analytics/revenue"
+      ]
+    },
+    {
+      "area": "API - Items Management",
+      "issue": "Global Item master table not used effectively in pricing",
+      "impact": "ServiceItem.itemId optional, pricing not fully linked to global items",
+      "required_action": "Refactor pricing to link via Item master, support bulk pricing updates",
+      "endpoint": "POST /api/v1/items/:id/services (assign services to item)"
+    },
+    {
+      "area": "Mobile - Ratings",
+      "issue": "Post-delivery ratings UI not implemented",
+      "impact": "No feedback collection from customers",
+      "required_action": "Add rating screen after DELIVERED status",
+      "endpoint": "POST /api/v1/orders/:id/rating (needs to be created)"
+    },
+    {
+      "area": "Mobile - Address Management",
+      "issue": "Multiple addresses not shown in checkout",
+      "impact": "Customer must create new address for each order",
+      "required_action": "Show saved addresses, allow selection during checkout",
+      "endpoint": "GET /api/v1/addresses"
+    },
+    {
+      "area": "Driver App - Available Orders",
+      "issue": "Driver cannot see orders available for pickup (PENDING orders needing assignment)",
+      "impact": "Driver workflow incomplete - only sees assigned orders",
+      "required_action": "Create endpoint to fetch available orders for nearby drivers",
+      "endpoint": "GET /api/v1/driver-app/available-orders (needs creation)"
+    },
+    {
+      "area": "Database - Order Tracking",
+      "issue": "No automated status transitions or webhook triggers",
+      "impact": "Status updates are manual, no external integrations",
+      "required_action": "Implement event system for order status changes",
+      "impact_level": "Medium - affects third-party integrations"
+    },
+    {
+      "area": "API - Rate Limiting",
+      "issue": "Rate limits apply globally, no per-user quotas",
+      "impact": "Bot attacks could throttle legitimate users",
+      "required_action": "Implement user-level rate limiting per endpoint",
+      "impact_level": "Low - current global limit may be sufficient for MVP"
+    },
+    {
+      "area": "Mobile - Offline Support",
+      "issue": "No offline-first caching strategy",
+      "impact": "App non-functional without internet",
+      "required_action": "Implement service worker, cache key endpoints",
+      "endpoints": [
+        "GET /services (cache 24h)",
+        "GET /banners (cache 12h)",
+        "GET /addresses (cache 1h)"
+      ]
+    },
+    {
+      "area": "Mobile - Search/Filter",
+      "issue": "No search functionality for services or orders",
+      "impact": "Users cannot find specific services or past orders",
+      "required_action": "Add search/filter UI and query parameters",
+      "endpoints": [
+        "GET /api/v1/services?search=...",
+        "GET /api/v1/orders?search=..."
+      ]
+    }
+  ],
+  "implementation_priority": {
+    "critical": [
+      "Mobile: Service Detail Screen + Order Creation",
+      "Mobile: Order Tracking and Status Updates",
+      "Driver: Available Orders + Order Pickup Flow",
+      "Admin: Driver Document Verification"
+    ],
+    "high": [
+      "Mobile: Coupon Application in Checkout",
+      "Mobile: Slot Selection UI",
+      "Mobile: Multiple Address Selection",
+      "Admin: Analytics Dashboard",
+      "Push Notifications Setup"
+    ],
+    "medium": [
+      "Mobile: Post-Delivery Ratings",
+      "Driver App: Earnings Dashboard",
+      "Mobile: Offline Support",
+      "Global Items Master Integration"
+    ],
+    "low": [
+      "Mobile: Search/Filter",
+      "Rate Limiting Refinement",
+      "Driver: Document Upload UI"
+    ]
+  }
+}

@@ -9,10 +9,11 @@
   "scripts": {
     "dev:api": "npm --workspace @laundry/api run dev",
     "dev:admin": "npm --workspace @laundry/admin run dev",
+    "dev:driver-web": "npm --workspace @laundry/driver-web run dev",
     "dev:mobile": "npm --workspace @laundry/mobile start",
-    "dev:driver": "npm --workspace @laundry/driver start",
     "build:api": "npm --workspace @laundry/api run build",
     "build:admin": "npm --workspace @laundry/admin run build",
+    "build:driver-web": "npm --workspace @laundry/driver-web run build",
     "db:migrate": "npm --workspace @laundry/api run db:migrate",
     "db:seed": "npm --workspace @laundry/api run db:seed",
     "test": "npm run test --workspaces",

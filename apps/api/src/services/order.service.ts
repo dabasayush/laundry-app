@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../config/prisma";
 import { cacheGet, cacheSet, cacheDel, CacheKeys, TTL } from "../utils/cache";
 import { AppError } from "../middleware/errorHandler";
+import { logger } from "../config/logger";
 import type { OrderStatus, PaymentMethod } from "@prisma/client";
 import { resolveNamedOffer, resolveBestOffer } from "./offer.service";
 import { getPickupConfig } from "./slot.service";
@@ -52,113 +53,135 @@ export async function createOrder(data: {
   notes?: string;
   items: Array<{ serviceItemId: string; quantity: number }>;
 }): Promise<OrderWithDetails> {
-  return prisma.$transaction(async (tx) => {
-    // 1. Resolve prices — only active items are accepted
-    const serviceItems = await tx.serviceItem.findMany({
-      where: {
-        id: { in: data.items.map((i) => i.serviceItemId) },
-        isActive: true,
-      },
-    });
-    if (serviceItems.length !== data.items.length) {
-      throw new AppError(
-        "One or more service items not found or inactive",
-        400,
-      );
-    }
-
-    const priceMap = new Map(serviceItems.map((si) => [si.id, si.price]));
-    const orderItemsData = data.items.map((i) => {
-      const unitPrice = priceMap.get(i.serviceItemId)!;
-      return {
-        serviceItemId: i.serviceItemId,
-        quantity: i.quantity,
-        unitPrice,
-        subtotal: new Decimal(unitPrice).mul(i.quantity),
-      };
-    });
-
-    const totalAmount = orderItemsData.reduce(
-      (sum, i) => sum.add(i.subtotal),
-      new Decimal(0),
-    );
-
-    // 2. Validate offer and compute discount
-    let resolvedOfferId: string | undefined = data.offerId;
-    let discountAmount = new Decimal(0);
-    if (resolvedOfferId) {
-      const result = await resolveNamedOffer(tx, resolvedOfferId, totalAmount);
-      discountAmount = result.discountAmount;
-    } else {
-      const best = await resolveBestOffer(tx, totalAmount);
-      if (best) {
-        resolvedOfferId = best.offerId;
-        discountAmount = best.discountAmount;
-      }
-    }
-
-    const pickupOption = data.pickupOption ?? "MORNING";
-    const pickupCfg = await getPickupConfig();
-    const pickupSurcharge =
-      pickupOption === "INSTANT" && pickupCfg.instantEnabled
-        ? new Decimal(pickupCfg.instantFee)
-        : new Decimal(0);
-
-    const pickupMeta = [
-      `pickup=${pickupOption}`,
-      pickupSurcharge.gt(0) ? `instant_fee=${pickupSurcharge.toFixed(2)}` : "",
-      data.pickupAddressText?.trim()
-        ? `pickup_address=${data.pickupAddressText.trim()}`
-        : "",
-    ]
-      .filter(Boolean)
-      .join(" | ");
-
-    const finalAmount = totalAmount.sub(discountAmount).add(pickupSurcharge);
-    const combinedNotes = [data.notes?.trim(), pickupMeta]
-      .filter(Boolean)
-      .join("\n")
-      .slice(0, 500);
-
-    // 3. Create order with items
-    const order = await tx.order.create({
-      data: {
-        userId: data.userId,
-        addressId: data.addressId,
-        offerId: resolvedOfferId,
-        paymentMethod: data.paymentMethod,
-        notes: combinedNotes || undefined,
-        totalAmount,
-        discountAmount,
-        finalAmount,
-        items: { create: orderItemsData },
-      },
-      include: ORDER_INCLUDE,
-    });
-
-    // 4. Side-effects: offer usage counter + user lifetime stats
-    const sideEffects: Promise<unknown>[] = [
-      tx.user.update({
-        where: { id: data.userId },
-        data: {
-          totalOrders: { increment: 1 },
-          totalSpent: { increment: finalAmount.toNumber() },
-          lastOrderDate: new Date(),
+  try {
+    return await prisma.$transaction(async (tx) => {
+      // 1. Resolve prices — only active items are accepted
+      const serviceItems = await tx.serviceItem.findMany({
+        where: {
+          id: { in: data.items.map((i) => i.serviceItemId) },
+          isActive: true,
         },
-      }),
-    ];
-    if (resolvedOfferId) {
-      sideEffects.push(
-        tx.offer.update({
-          where: { id: resolvedOfferId },
-          data: { usedCount: { increment: 1 } },
+      });
+      if (serviceItems.length !== data.items.length) {
+        throw new AppError(
+          "One or more service items not found or inactive",
+          400,
+        );
+      }
+
+      const priceMap = new Map(serviceItems.map((si) => [si.id, si.price]));
+      const orderItemsData = data.items.map((i) => {
+        const unitPrice = priceMap.get(i.serviceItemId)!;
+        return {
+          serviceItemId: i.serviceItemId,
+          quantity: i.quantity,
+          unitPrice,
+          subtotal: new Decimal(unitPrice).mul(i.quantity),
+        };
+      });
+
+      const totalAmount = orderItemsData.reduce(
+        (sum, i) => sum.add(i.subtotal),
+        new Decimal(0),
+      );
+
+      // 2. Validate offer and compute discount
+      let resolvedOfferId: string | undefined = data.offerId;
+      let discountAmount = new Decimal(0);
+      if (resolvedOfferId) {
+        const result = await resolveNamedOffer(
+          tx,
+          resolvedOfferId,
+          totalAmount,
+        );
+        discountAmount = result.discountAmount;
+      } else {
+        const best = await resolveBestOffer(tx, totalAmount);
+        if (best) {
+          resolvedOfferId = best.offerId;
+          discountAmount = best.discountAmount;
+        }
+      }
+
+      const pickupOption = data.pickupOption ?? "MORNING";
+      const pickupCfg = await getPickupConfig();
+      const pickupSurcharge =
+        pickupOption === "INSTANT" && pickupCfg.instantEnabled
+          ? new Decimal(pickupCfg.instantFee)
+          : new Decimal(0);
+
+      const pickupMeta = [
+        `pickup=${pickupOption}`,
+        pickupSurcharge.gt(0)
+          ? `instant_fee=${pickupSurcharge.toFixed(2)}`
+          : "",
+        data.pickupAddressText?.trim()
+          ? `pickup_address=${data.pickupAddressText.trim()}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" | ");
+
+      const finalAmount = totalAmount.sub(discountAmount).add(pickupSurcharge);
+      const combinedNotes = [data.notes?.trim(), pickupMeta]
+        .filter(Boolean)
+        .join("\n")
+        .slice(0, 500);
+
+      // 3. Create order with items
+      const order = await tx.order.create({
+        data: {
+          userId: data.userId,
+          addressId: data.addressId,
+          offerId: resolvedOfferId,
+          paymentMethod: data.paymentMethod,
+          notes: combinedNotes || undefined,
+          totalAmount,
+          discountAmount,
+          finalAmount,
+          items: { create: orderItemsData },
+        },
+        include: ORDER_INCLUDE,
+      });
+
+      // 4. Side-effects: offer usage counter + user lifetime stats
+      const sideEffects: Promise<unknown>[] = [
+        tx.user.update({
+          where: { id: data.userId },
+          data: {
+            totalOrders: { increment: 1 },
+            totalSpent: { increment: finalAmount.toNumber() },
+            lastOrderDate: new Date(),
+          },
         }),
+      ];
+      if (resolvedOfferId) {
+        sideEffects.push(
+          tx.offer.update({
+            where: { id: resolvedOfferId },
+            data: { usedCount: { increment: 1 } },
+          }),
+        );
+      }
+      await Promise.all(sideEffects);
+
+      return order as OrderWithDetails;
+    });
+  } catch (error: any) {
+    // Handle database connection errors
+    if (
+      error.code === "P1001" ||
+      error.message?.includes("Can't reach database server")
+    ) {
+      logger.error("Database connection error during order creation", error);
+      throw new AppError(
+        "Database service temporarily unavailable. Please try again later.",
+        503,
       );
     }
-    await Promise.all(sideEffects);
-
-    return order as OrderWithDetails;
-  });
+    // Re-throw other errors
+    throw error;
+  }
 }
 
 export async function getCustomerOrders(params: {
@@ -167,22 +190,36 @@ export async function getCustomerOrders(params: {
   limit: number;
   status?: OrderStatus;
 }): Promise<{ orders: OrderWithDetails[]; total: number }> {
-  const { userId, page, limit, status } = params;
-  const skip = (page - 1) * limit;
-  const where: Prisma.OrderWhereInput = { userId, ...(status && { status }) };
+  try {
+    const { userId, page, limit, status } = params;
+    const skip = (page - 1) * limit;
+    const where: Prisma.OrderWhereInput = { userId, ...(status && { status }) };
 
-  const [orders, total] = await Promise.all([
-    prisma.order.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: { createdAt: "desc" },
-      include: ORDER_INCLUDE,
-    }),
-    prisma.order.count({ where }),
-  ]);
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        include: ORDER_INCLUDE,
+      }),
+      prisma.order.count({ where }),
+    ]);
 
-  return { orders: orders as OrderWithDetails[], total };
+    return { orders: orders as OrderWithDetails[], total };
+  } catch (error: any) {
+    if (
+      error.code === "P1001" ||
+      error.message?.includes("Can't reach database server")
+    ) {
+      logger.error("Database connection error fetching orders", error);
+      throw new AppError(
+        "Database service temporarily unavailable. Please try again later.",
+        503,
+      );
+    }
+    throw error;
+  }
 }
 
 export async function getById(
@@ -291,7 +328,38 @@ export async function cancelOrder(
 
   const updated = await prisma.order.update({
     where: { id },
-    data: { status: "CANCELLED" },
+    data: {
+      status: "CANCELLED",
+      cancelledAt: new Date(),
+      cancelledBy: "CUSTOMER",
+    },
+    include: ORDER_INCLUDE,
+  });
+  await cacheDel(CacheKeys.order(id));
+  return updated as OrderWithDetails;
+}
+
+export async function cancelOrderByAdmin(
+  id: string,
+): Promise<OrderWithDetails> {
+  const order = await prisma.order.findUnique({ where: { id } });
+  if (!order) throw new AppError("Order not found", 404);
+
+  // Admin can cancel any order except DELIVERED and CANCELLED
+  if (["DELIVERED", "CANCELLED"].includes(order.status)) {
+    throw new AppError(
+      `Cannot cancel an order with status: ${order.status}`,
+      400,
+    );
+  }
+
+  const updated = await prisma.order.update({
+    where: { id },
+    data: {
+      status: "CANCELLED",
+      cancelledAt: new Date(),
+      cancelledBy: "ADMIN",
+    },
     include: ORDER_INCLUDE,
   });
   await cacheDel(CacheKeys.order(id));

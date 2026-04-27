@@ -169,6 +169,21 @@ export async function cancelOrder(
   }
 }
 
+// ── POST /orders/:id/cancel-admin — admin can cancel any order
+
+export async function cancelOrderAdmin(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const order = await orderService.cancelOrderByAdmin(req.params.id);
+    sendSuccess(res, order, 200, "Order cancelled by admin");
+  } catch (err) {
+    next(err);
+  }
+}
+
 // ── PATCH /orders/:id/collect-payment — driver marks cash/UPI received
 export async function collectPayment(
   req: Request,

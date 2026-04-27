@@ -84,12 +84,19 @@ router.patch(
   orderController.collectPayment,
 );
 
-// ── POST /orders/:id/cancel ────────────────────────────────────────────────────
-// Customer: cancel a PENDING or PICKUP_ASSIGNED order.
+// ── POST /orders/:id/cancel — customer cancels a PENDING / PICKUP_ASSIGNED order
 router.post(
   "/:id/cancel",
   validate(uuidParamSchema, "params"),
   orderController.cancelOrder,
+);
+
+// ── POST /orders/:id/cancel-admin — admin can cancel any order
+router.post(
+  "/:id/cancel-admin",
+  authorize("ADMIN"),
+  validate(uuidParamSchema, "params"),
+  orderController.cancelOrderAdmin,
 );
 
 export default router;

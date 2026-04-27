@@ -5,15 +5,20 @@ import { env } from "../config/env";
 import { Prisma } from "@prisma/client";
 
 export const driverAuthService = {
-  // Driver login with phone and password
-  async driverLogin(phone: string, password: string) {
-    // Find driver by phone
-    const driver = await prisma.driver.findUnique({
-      where: { phone },
+  // Driver login with phone or email and password (web & mobile)
+  async driverLogin(identifier: string, password: string) {
+    // Find driver by phone or email
+    const driver = await prisma.driver.findFirst({
+      where: {
+        OR: [
+          { phone: identifier },
+          { email: identifier },
+        ],
+      },
     });
 
     if (!driver) {
-      throw new Error("Invalid phone or password");
+      throw new Error("Invalid credentials");
     }
 
     if (!driver.isActive) {
@@ -27,12 +32,13 @@ export const driverAuthService = {
 
     const isPasswordValid = await bcrypt.compare(password, driver.passwordHash);
     if (!isPasswordValid) {
-      throw new Error("Invalid phone or password");
+      throw new Error("Invalid credentials");
     }
 
     const accessToken = jwt.sign(
       {
         id: driver.id,
+        email: driver.email,
         phone: driver.phone,
         role: "DRIVER",
       },
@@ -43,6 +49,7 @@ export const driverAuthService = {
     const refreshToken = jwt.sign(
       {
         id: driver.id,
+        email: driver.email,
         phone: driver.phone,
         role: "DRIVER",
       },
@@ -129,40 +136,50 @@ export const driverAuthService = {
   },
 
   // Get assigned orders for driver
-  async getAssignedOrders(driverId: string, status?: string) {
+  async getAssignedOrders(driverId: string, status?: string, skip: number = 0, take: number = 10) {
     const where: any = { driverId };
 
     if (status) {
       where.status = status;
     }
 
-    const orders = await prisma.order.findMany({
-      where,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            phone: true,
-            email: true,
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+              email: true,
+            },
           },
-        },
-        address: true,
-        items: {
-          include: {
-            serviceItem: {
-              select: {
-                name: true,
-                price: true,
+          address: true,
+          items: {
+            include: {
+              serviceItem: {
+                select: {
+                  name: true,
+                  price: true,
+                },
               },
             },
           },
         },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+        orderBy: { createdAt: "desc" },
+        skip,
+        take,
+      }),
+      prisma.order.count({ where }),
+    ]);
 
-    return orders;
+    return {
+      data: orders,
+      page: Math.floor(skip / take) + 1,
+      limit: take,
+      total,
+    };
   },
 
   // Accept/reject order

@@ -2,24 +2,24 @@ import type { Request, Response, NextFunction } from "express";
 import { driverAuthService } from "../services/driver-auth.service";
 import { handleError } from "../utils/errorHandler";
 
-// Driver login
+// Driver login (phone or email)
 export const driverLogin = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const { phone, password } = req.body;
+    const { identifier, password } = req.body;
 
-    if (!phone || !password) {
+    if (!identifier || !password) {
       return res.status(400).json({
         success: false,
-        message: "Phone and password are required",
+        message: "Email/phone and password are required",
       });
     }
 
     const { accessToken, refreshToken, driver } = await driverAuthService.driverLogin(
-      phone,
+      identifier,
       password,
     );
 
@@ -108,7 +108,7 @@ export const getAssignedOrders = async (
 ) => {
   try {
     const driverId = (req as any).driver?.id;
-    const { status } = req.query;
+    const { status, page = 1, limit = 10 } = req.query;
 
     if (!driverId) {
       return res.status(401).json({
@@ -117,7 +117,13 @@ export const getAssignedOrders = async (
       });
     }
 
-    const orders = await driverAuthService.getAssignedOrders(driverId, status as string);
+    const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+    const orders = await driverAuthService.getAssignedOrders(
+      driverId,
+      status as string,
+      skip,
+      parseInt(limit as string)
+    );
 
     res.json({
       success: true,

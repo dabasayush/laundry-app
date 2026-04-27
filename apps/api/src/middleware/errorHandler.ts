@@ -85,6 +85,27 @@ export function errorHandler(
     return;
   }
 
+  // Prisma initialization/connection errors
+  if (err instanceof Prisma.PrismaClientInitializationError) {
+    logger.error("Database connection error", err);
+    res.status(StatusCodes.SERVICE_UNAVAILABLE).json({
+      success: false,
+      message:
+        "Database service temporarily unavailable. Please try again later.",
+    });
+    return;
+  }
+
+  // Prisma runtime errors
+  if (err instanceof Prisma.PrismaClientRustPanicError) {
+    logger.error("Prisma runtime error", err);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: "Database operation failed. Please try again.",
+    });
+    return;
+  }
+
   // Prisma validation errors (bad data shape)
   if (err instanceof Prisma.PrismaClientValidationError) {
     res.status(StatusCodes.BAD_REQUEST).json({

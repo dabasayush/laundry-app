@@ -54,6 +54,7 @@ export default function OrdersPage() {
   const [bulkStatus, setBulkStatus] = useState<OrderStatus>("PENDING");
   const [newStatus, setNewStatus] = useState<OrderStatus>("PENDING");
   const [notes, setNotes] = useState("");
+  const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["orders", { page, status: statusFilter }],
@@ -84,6 +85,15 @@ export default function OrdersPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["orders"] });
       setSelectedIds([]);
+    },
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: () =>
+      adminApi.cancelOrderAdmin(orderToCancel!.id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      setOrderToCancel(null);
     },
   });
 
@@ -256,7 +266,7 @@ export default function OrdersPage() {
                       {formatDateTime(order.createdAt)}
                     </td>
                     <td className="px-6 py-3">
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         <Button
                           size="sm"
                           variant="outline"
@@ -275,6 +285,16 @@ export default function OrdersPage() {
                         >
                           Update
                         </Button>
+                        {order.status !== "DELIVERED" && order.status !== "CANCELLED" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-red-600 hover:text-red-700"
+                            onClick={() => setOrderToCancel(order)}
+                          >
+                            Cancel
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -413,6 +433,37 @@ export default function OrdersPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDetailOrder(null)}>
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Order Dialog */}
+      <Dialog
+        open={!!orderToCancel}
+        onOpenChange={(open) => !open && setOrderToCancel(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancel Order?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground py-2">
+            Are you sure you want to cancel order{" "}
+            <span className="font-mono font-medium text-slate-700">
+              {orderToCancel ? truncateId(orderToCancel.id) : ""}
+            </span>
+            ? This action cannot be undone.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOrderToCancel(null)}>
+              Keep Order
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => cancelMutation.mutate()}
+              disabled={cancelMutation.isPending}
+            >
+              {cancelMutation.isPending ? "Canceling…" : "Yes, Cancel Order"}
             </Button>
           </DialogFooter>
         </DialogContent>

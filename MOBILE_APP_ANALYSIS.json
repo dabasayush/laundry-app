@@ -1,0 +1,741 @@
+{
+  "project": {
+    "name": "Laundry Mobile App - React Native",
+    "framework": "React Native 0.74.0 + Expo 51",
+    "language": "TypeScript (strict mode)",
+    "status": "🟡 PRODUCTION-READY FOUNDATION (~40% FEATURE COMPLETE)",
+    "analysisDate": "2026-04-21",
+    "baseUrl": "http://localhost:4000/api/v1"
+  },
+
+  "structure": {
+    "totalFiles": 25,
+    "rootFolders": [
+      "src/screens/",
+      "src/navigation/",
+      "src/services/",
+      "src/context/",
+      "src/config/",
+      "src/lib/",
+      "src/types/"
+    ],
+    "screens": {
+      "auth": [
+        "LoginScreen.tsx ✅",
+        "OtpScreen.tsx ✅",
+        "OnboardingScreen.tsx ✅"
+      ],
+      "home": ["HomeScreen.tsx ⚠️"],
+      "services": ["ServicesScreen.tsx 🚫", "ServiceDetailScreen.tsx ⚠️"],
+      "cart": ["CartScreen.tsx 🚫"],
+      "orders": ["OrdersScreen.tsx ⚠️"],
+      "profile": ["ProfileScreen.tsx ⚠️"]
+    }
+  },
+
+  "implementation_status": {
+    "authentication": {
+      "status": "✅ COMPLETE",
+      "percentage": 100,
+      "details": {
+        "phoneLogin": "✅ Phone input + validation",
+        "otpGeneration": "✅ OTP sending & verification",
+        "firstTimeDetection": "✅ Checks for existing user",
+        "onboarding": "✅ Full name, address, pincode",
+        "tokenManagement": "✅ AccessToken + RefreshToken (AsyncStorage)",
+        "autoRefresh": "✅ 401 triggers token refresh",
+        "logout": "✅ Implemented"
+      },
+      "files": [
+        "src/screens/auth/LoginScreen.tsx",
+        "src/screens/auth/OtpScreen.tsx",
+        "src/screens/auth/OnboardingScreen.tsx",
+        "src/services/auth.service.ts",
+        "src/context/AuthContext.tsx"
+      ]
+    },
+
+    "navigation": {
+      "status": "✅ COMPLETE",
+      "percentage": 95,
+      "details": {
+        "authStack": "✅ Login → OTP → Onboarding",
+        "mainTabs": "✅ Home | Services | Cart | Orders | Profile",
+        "conditionalRendering": "✅ Auth vs non-auth",
+        "safeArea": "✅ Proper edge handling",
+        "missing": "Quick action handlers not fully wired"
+      },
+      "files": ["src/navigation/AppNavigator.tsx"]
+    },
+
+    "apiIntegration": {
+      "status": "✅ COMPLETE",
+      "percentage": 100,
+      "details": {
+        "httpClient": "✅ Axios instance configured",
+        "interceptors": "✅ Bearer token injection",
+        "timeout": "✅ 30 seconds",
+        "tokenRefresh": "✅ Auto-refresh on 401",
+        "platformDetection": "✅ iOS/Android localhost detection",
+        "errorHandling": "✅ Try-catch + user messages"
+      },
+      "files": ["src/lib/apiClient.ts"]
+    },
+
+    "designSystem": {
+      "status": "✅ COMPLETE",
+      "percentage": 100,
+      "details": {
+        "colors": "✅ 20+ semantic colors defined",
+        "typography": "✅ 5 font sizes + 5 weights",
+        "spacing": "✅ 7 spacing tokens",
+        "borderRadius": "✅ 4 radius sizes",
+        "shadows": "✅ 3 shadow levels",
+        "components": "✅ 5 Premium components"
+      },
+      "components": [
+        "PremiumButton (4 variants, 3 sizes)",
+        "PremiumInput (validation, error states)",
+        "PremiumCard (shadow intensity)",
+        "PremiumHeader (customizable)",
+        "PremiumBadge (status indicator)"
+      ],
+      "files": [
+        "src/lib/theme.ts",
+        "src/lib/components/PremiumButton.tsx",
+        "src/lib/components/PremiumInput.tsx",
+        "src/lib/components/PremiumCard.tsx",
+        "src/lib/components/PremiumHeader.tsx",
+        "src/lib/components/PremiumBadge.tsx"
+      ]
+    },
+
+    "profileManagement": {
+      "status": "✅ COMPLETE",
+      "percentage": 90,
+      "details": {
+        "userCreation": "✅ First-time setup",
+        "nameUpdate": "✅ User name",
+        "emailUpdate": "✅ User email",
+        "addressCreation": "✅ Full address with pincode",
+        "pincodeValidation": "✅ Service area check",
+        "userFetch": "✅ Get profile from API"
+      },
+      "files": [
+        "src/services/auth.service.ts",
+        "src/screens/auth/OnboardingScreen.tsx"
+      ]
+    },
+
+    "homepage": {
+      "status": "⚠️ PARTIAL (60%)",
+      "percentage": 60,
+      "details": {
+        "bannerCarousel": "✅ Fetch and display",
+        "paginationDots": "✅ Carousel indicators",
+        "userGreeting": "✅ Display user name",
+        "quickActions": "⚠️ UI ready, handlers missing",
+        "notificationIcon": "✅ Placeholder ready"
+      },
+      "files": [
+        "src/screens/home/HomeScreen.tsx",
+        "src/services/banner.service.ts"
+      ]
+    },
+
+    "servicesFeature": {
+      "status": "🚫 NOT IMPLEMENTED",
+      "percentage": 0,
+      "details": {
+        "servicesList": "❌ ServicesScreen is empty",
+        "serviceDetails": "⚠️ Component exists but incomplete",
+        "itemDisplay": "⚠️ Partial implementation",
+        "quantityControl": "✅ Logic present",
+        "cartIntegration": "❌ Missing"
+      },
+      "missing": [
+        "Services list fetch & display",
+        "Service filtering/searching",
+        "Category filtering",
+        "Service item gallery",
+        "Price display",
+        "Item selection"
+      ],
+      "files": [
+        "src/screens/services/ServicesScreen.tsx (EMPTY)",
+        "src/screens/services/ServiceDetailScreen.tsx (INCOMPLETE)"
+      ]
+    },
+
+    "cartFeature": {
+      "status": "🚫 NOT IMPLEMENTED",
+      "percentage": 0,
+      "details": {
+        "cartScreen": "❌ CartScreen is empty",
+        "itemManagement": "❌ Missing",
+        "totalCalculation": "❌ Missing",
+        "checkout": "❌ Missing",
+        "cartPersistence": "❌ Missing"
+      },
+      "missing": [
+        "Cart items display",
+        "Quantity management",
+        "Remove/update items",
+        "Price calculations",
+        "Promo code handling",
+        "Checkout button"
+      ],
+      "files": ["src/screens/cart/CartScreen.tsx (EMPTY)"]
+    },
+
+    "ordersFeature": {
+      "status": "🚫 NOT IMPLEMENTED",
+      "percentage": 5,
+      "details": {
+        "ordersList": "❌ Only empty state shown",
+        "orderDetails": "❌ Missing",
+        "orderTracking": "❌ Missing",
+        "orderHistory": "❌ Missing",
+        "orderCancellation": "❌ Missing"
+      },
+      "missing": [
+        "Fetch orders from API",
+        "Display order list",
+        "Order detail screen",
+        "Real-time status updates",
+        "Order timeline",
+        "Cancel order flow"
+      ],
+      "files": ["src/screens/orders/OrdersScreen.tsx"]
+    },
+
+    "profileScreen": {
+      "status": "⚠️ PARTIAL (40%)",
+      "percentage": 40,
+      "details": {
+        "profileHeader": "✅ Avatar + name",
+        "settingsItems": "⚠️ Structure present, logic missing",
+        "formValidation": "❌ Missing",
+        "addressManagement": "❌ Missing",
+        "preferences": "❌ Missing"
+      },
+      "missing": [
+        "Full profile form",
+        "Address list/management",
+        "Preferences/settings",
+        "Notification settings",
+        "Help/FAQ",
+        "Logout button"
+      ],
+      "files": ["src/screens/profile/ProfileScreen.tsx"]
+    },
+
+    "stateManagement": {
+      "status": "🚫 NOT IMPLEMENTED",
+      "percentage": 0,
+      "details": {
+        "redux": "❌ In package.json but not configured",
+        "reduxSlices": "❌ Zero slices created",
+        "reduxActions": "❌ No actions",
+        "contextApi": "✅ AuthContext only",
+        "zustand": "❌ Not used"
+      },
+      "dependencies": [
+        "@reduxjs/toolkit ^2.0.1 ❌ UNUSED",
+        "react-redux ^2.0.0 ❌ UNUSED",
+        "redux ^5.0.1 ❌ UNUSED"
+      ],
+      "needed": [
+        "ordersSlice - orders list, current order",
+        "servicesSlice - services catalog, filters",
+        "cartSlice - cart items, quantities",
+        "addressesSlice - user addresses",
+        "filtersSlice - search, sort, filter"
+      ]
+    },
+
+    "serviceLayer": {
+      "status": "🚫 INCOMPLETE",
+      "percentage": 20,
+      "details": {
+        "authService": "✅ Complete (sendOtp, verifyOtp, logout, etc)",
+        "bannerService": "✅ Complete (getBanners)",
+        "ordersService": "❌ Missing",
+        "servicesService": "❌ Missing",
+        "cartService": "❌ Missing",
+        "paymentService": "❌ Missing",
+        "addressService": "⚠️ Partially used in onboarding"
+      },
+      "files": [
+        "src/services/auth.service.ts ✅",
+        "src/services/banner.service.ts ✅",
+        "src/services/api/ (EMPTY FOLDER)"
+      ]
+    },
+
+    "typeDefinitions": {
+      "status": "🚫 NOT DEFINED LOCALLY",
+      "percentage": 0,
+      "details": {
+        "localTypes": "❌ src/types/ is empty",
+        "sharedTypes": "✅ Using @laundry/shared-types",
+        "typeImports": "✅ User, Service, Order from shared"
+      },
+      "needed": [
+        "Order interface",
+        "CartItem interface",
+        "ServiceItem interface",
+        "Address interface",
+        "Filter interface",
+        "ApiResponse wrapper"
+      ]
+    },
+
+    "environment": {
+      "status": "✅ COMPLETE",
+      "percentage": 100,
+      "details": {
+        "apiUrl": "✅ Platform-specific localhost detection",
+        "firebaseConfig": "⚠️ Placeholders only",
+        "stripeConfig": "⚠️ Placeholders only",
+        "appEnv": "✅ development/staging/production"
+      },
+      "files": ["src/config/env.ts"]
+    }
+  },
+
+  "apiEndpoints": {
+    "currently_used": [
+      {
+        "method": "POST",
+        "endpoint": "/auth/send-otp",
+        "status": "✅ WORKING",
+        "usedIn": "LoginScreen"
+      },
+      {
+        "method": "POST",
+        "endpoint": "/auth/verify-otp",
+        "status": "✅ WORKING",
+        "usedIn": "OtpScreen"
+      },
+      {
+        "method": "GET",
+        "endpoint": "/users/by-phone",
+        "status": "✅ WORKING",
+        "usedIn": "OtpScreen (first-time check)"
+      },
+      {
+        "method": "PATCH",
+        "endpoint": "/users/me",
+        "status": "✅ WORKING",
+        "usedIn": "OnboardingScreen"
+      },
+      {
+        "method": "POST",
+        "endpoint": "/addresses",
+        "status": "✅ WORKING",
+        "usedIn": "OnboardingScreen"
+      },
+      {
+        "method": "GET",
+        "endpoint": "/addresses/validate-pincode/:pincode",
+        "status": "✅ WORKING",
+        "usedIn": "OnboardingScreen"
+      },
+      {
+        "method": "GET",
+        "endpoint": "/banners",
+        "status": "✅ WORKING",
+        "usedIn": "HomeScreen"
+      }
+    ],
+
+    "available_but_unused": [
+      {
+        "method": "GET",
+        "endpoint": "/services",
+        "status": "❌ NOT CALLED",
+        "needed": "ServicesScreen"
+      },
+      {
+        "method": "GET",
+        "endpoint": "/services/:id",
+        "status": "❌ NOT CALLED",
+        "needed": "ServiceDetailScreen"
+      },
+      {
+        "method": "GET",
+        "endpoint": "/services/:id/items",
+        "status": "⚠️ PARTIALLY USED",
+        "needed": "ServiceDetailScreen"
+      },
+      {
+        "method": "POST",
+        "endpoint": "/orders",
+        "status": "❌ NOT CALLED",
+        "needed": "CheckoutScreen (not yet created)"
+      },
+      {
+        "method": "GET",
+        "endpoint": "/orders",
+        "status": "❌ NOT CALLED",
+        "needed": "OrdersScreen"
+      },
+      {
+        "method": "GET",
+        "endpoint": "/orders/:id",
+        "status": "❌ NOT CALLED",
+        "needed": "OrderDetailScreen (not yet created)"
+      },
+      {
+        "method": "PATCH",
+        "endpoint": "/orders/:id",
+        "status": "❌ NOT CALLED",
+        "needed": "OrderDetailScreen"
+      },
+      {
+        "method": "GET",
+        "endpoint": "/addresses",
+        "status": "❌ NOT CALLED",
+        "needed": "AddressListScreen (not yet created)"
+      },
+      {
+        "method": "GET",
+        "endpoint": "/products",
+        "status": "❌ NOT CALLED",
+        "needed": "Add-ons in CartScreen"
+      },
+      {
+        "method": "GET",
+        "endpoint": "/slots",
+        "status": "❌ NOT CALLED",
+        "needed": "SlotSelectionScreen (not yet created)"
+      }
+    ]
+  },
+
+  "state_management": {
+    "current": {
+      "pattern": "React Context API",
+      "scope": "Authentication only",
+      "implementation": "AuthContext with useState",
+      "state": {
+        "user": "User | null",
+        "accessToken": "string | null",
+        "refreshToken": "string | null",
+        "isAuthenticated": "boolean",
+        "isFirstTime": "boolean",
+        "loading": "boolean"
+      }
+    },
+
+    "missing": {
+      "redux": {
+        "installed": true,
+        "configured": false,
+        "reason": "Full feature management needed"
+      },
+      "slices_needed": {
+        "orders": "Order list, single order, loading, error",
+        "services": "Services catalog, filters, sorting",
+        "cart": "Cart items, total, quantities",
+        "addresses": "User addresses list, selected",
+        "filters": "Search, sort, category filters"
+      }
+    }
+  },
+
+  "components": {
+    "premium_components": [
+      {
+        "name": "PremiumButton",
+        "variants": ["primary", "secondary", "outline", "ghost"],
+        "sizes": ["sm", "md", "lg"],
+        "features": [
+          "loading state",
+          "disabled state",
+          "fullWidth",
+          "icon support"
+        ]
+      },
+      {
+        "name": "PremiumInput",
+        "features": [
+          "label",
+          "error state",
+          "helper text",
+          "icon support",
+          "focus state"
+        ]
+      },
+      {
+        "name": "PremiumCard",
+        "features": ["shadow intensity (sm/md/lg)", "border radius", "padding"]
+      },
+      {
+        "name": "PremiumHeader",
+        "features": ["customizable layout", "back button support"]
+      },
+      {
+        "name": "PremiumBadge",
+        "features": ["status indicator", "color variants"]
+      }
+    ],
+
+    "screen_components": [
+      {
+        "name": "LoginScreen",
+        "status": "✅ Complete",
+        "features": ["phone validation", "error handling", "loading state"]
+      },
+      {
+        "name": "OtpScreen",
+        "status": "✅ Complete",
+        "features": [
+          "OTP input",
+          "resend timer",
+          "error handling",
+          "back button"
+        ]
+      },
+      {
+        "name": "OnboardingScreen",
+        "status": "✅ Complete",
+        "features": [
+          "name input",
+          "address input",
+          "pincode validation",
+          "pincode validation",
+          "error display"
+        ]
+      },
+      {
+        "name": "HomeScreen",
+        "status": "⚠️ Partial",
+        "features": [
+          "user greeting",
+          "banner carousel",
+          "quick action buttons"
+        ],
+        "missing": ["quick action handlers"]
+      },
+      {
+        "name": "ServiceDetailScreen",
+        "status": "⚠️ Partial",
+        "features": ["item list", "quantity control"],
+        "missing": ["proper data fetching", "cart integration"]
+      },
+      {
+        "name": "OrdersScreen",
+        "status": "🚫 Incomplete",
+        "features": ["empty state"],
+        "missing": ["order list", "order details", "filters"]
+      },
+      {
+        "name": "ProfileScreen",
+        "status": "⚠️ Partial",
+        "features": ["header structure", "settings items"],
+        "missing": ["form logic", "address management", "preferences"]
+      },
+      {
+        "name": "ServicesScreen",
+        "status": "🚫 Empty",
+        "features": [],
+        "missing": ["everything"]
+      },
+      {
+        "name": "CartScreen",
+        "status": "🚫 Empty",
+        "features": [],
+        "missing": ["everything"]
+      }
+    ]
+  },
+
+  "design_system": {
+    "colors": {
+      "primary": "#2F5D50",
+      "primaryLight": "#7FAF9B",
+      "primaryDark": "#1F3D31",
+      "background": "#F5F7F6",
+      "surface": "#FFFFFF",
+      "text": "#1E2D2F",
+      "textSecondary": "#6B7C7D",
+      "success": "#10B981",
+      "error": "#EF4444",
+      "warning": "#F59E0B"
+    },
+
+    "typography": {
+      "h1": 28,
+      "h2": 24,
+      "h3": 20,
+      "h4": 18,
+      "body": 16,
+      "bodySmall": 14,
+      "caption": 12,
+      "weights": {
+        "light": "300",
+        "regular": "400",
+        "medium": "500",
+        "semibold": "600",
+        "bold": "700"
+      }
+    },
+
+    "spacing": {
+      "xs": 4,
+      "sm": 8,
+      "md": 12,
+      "lg": 16,
+      "xl": 20,
+      "xxl": 24,
+      "xxxl": 32
+    }
+  },
+
+  "dependencies": {
+    "used": [
+      "@react-native-async-storage/async-storage@1.24.0",
+      "@react-navigation/bottom-tabs@6.5.20",
+      "@react-navigation/native@6.1.17",
+      "@react-navigation/native-stack@6.9.26",
+      "axios@1.7.2",
+      "expo@51.0.0",
+      "react-hook-form@7.52.0",
+      "react-native@0.74.0",
+      "nativewind@2.0.11"
+    ],
+
+    "installed_but_unused": [
+      "@reduxjs/toolkit@2.0.1 ❌ No store configured",
+      "react-redux@2.0.0 ❌ No store configured",
+      "redux@5.0.1 ❌ No store configured",
+      "react-native-maps@1.14.0 ❌ Not integrated",
+      "react-native-reanimated@3.19.5 ⚠️ Minimal use",
+      "expo-notifications@0.28.19 ❌ Not configured"
+    ]
+  },
+
+  "code_patterns": {
+    "component_structure": "✅ Functional components with hooks",
+    "typing": "✅ TypeScript interfaces for all props",
+    "error_handling": "✅ Try-catch with user messages",
+    "styling": "✅ StyleSheet + theme constants",
+    "async_operations": "✅ useEffect cleanup, loading states",
+    "api_calls": "✅ Service layer abstraction",
+    "form_handling": "⚠️ Mix of useState and react-hook-form",
+    "navigation": "✅ React Navigation patterns",
+    "testing": "❌ No tests"
+  },
+
+  "production_readiness": {
+    "critical_issues": [
+      "❌ No Redux setup despite being in dependencies",
+      "❌ Cart feature completely missing",
+      "❌ Services list not implemented",
+      "❌ Order creation flow not implemented",
+      "❌ No error boundaries",
+      "❌ No global error handling"
+    ],
+
+    "important_issues": [
+      "⚠️ No pagination on lists",
+      "⚠️ No offline support",
+      "⚠️ No analytics tracking",
+      "⚠️ No crash reporting",
+      "⚠️ Push notifications not configured"
+    ],
+
+    "nice_to_have": [
+      "⚠️ No performance optimization",
+      "⚠️ No lazy loading",
+      "⚠️ No code splitting",
+      "⚠️ No A/B testing",
+      "⚠️ No accessibility features"
+    ]
+  },
+
+  "testing": {
+    "unit_tests": "❌ None",
+    "integration_tests": "❌ None",
+    "e2e_tests": "❌ None",
+    "test_framework": "jest (in devDeps but not configured)"
+  },
+
+  "feature_completion": {
+    "overall_percentage": 40,
+    "breakdown": {
+      "authentication": "✅ 100%",
+      "navigation": "✅ 95%",
+      "design_system": "✅ 100%",
+      "api_integration": "✅ 100%",
+      "home_screen": "⚠️ 60%",
+      "services_catalog": "🚫 0%",
+      "shopping_cart": "🚫 0%",
+      "order_placement": "🚫 0%",
+      "order_tracking": "🚫 5%",
+      "user_profile": "⚠️ 40%",
+      "payment_processing": "🚫 0%",
+      "notifications": "🚫 0%",
+      "real_time_updates": "🚫 0%"
+    }
+  },
+
+  "estimated_completion": {
+    "services_feature": "8 hours",
+    "shopping_cart": "6 hours",
+    "order_creation": "8 hours",
+    "order_tracking": "4 hours",
+    "redux_setup": "4 hours",
+    "payment_integration": "10 hours",
+    "notifications": "8 hours",
+    "optimization": "6 hours",
+    "testing": "10 hours",
+    "total_hours": "~64 hours"
+  },
+
+  "recommendations": {
+    "immediate_priority": [
+      "Set up Redux store with 5 slices",
+      "Implement services list & detail screens",
+      "Implement cart screen",
+      "Implement order creation flow",
+      "Add Redux async thunks for API calls"
+    ],
+
+    "short_term": [
+      "Implement order tracking",
+      "Add payment processing",
+      "Setup push notifications",
+      "Add order history",
+      "Implement address management UI"
+    ],
+
+    "medium_term": [
+      "Add maps integration",
+      "Real-time order updates",
+      "Location tracking",
+      "Chat/support system",
+      "Ratings & reviews"
+    ],
+
+    "code_quality": [
+      "Add unit tests",
+      "Add E2E tests",
+      "Error boundary components",
+      "Performance optimization",
+      "Accessibility improvements"
+    ]
+  },
+
+  "summary": {
+    "status": "🟡 PRODUCTION-READY FOUNDATION",
+    "completeness": "40% feature complete",
+    "code_quality": "High (TypeScript strict, consistent patterns)",
+    "architecture": "Well-structured (services, context, components)",
+    "main_blocker": "Redux not configured, core features not implemented",
+    "time_to_production": "3-4 weeks for MVP completion",
+    "team_size_recommended": "2-3 developers"
+  }
+}

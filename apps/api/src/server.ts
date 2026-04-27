@@ -8,12 +8,26 @@ import { env } from "./config/env";
 async function bootstrap(): Promise<void> {
   try {
     // ── Database ────────────────────────────────────────────────────────────
-    await prisma.$connect();
-    logger.info("PostgreSQL connected via Prisma");
+    try {
+      await prisma.$connect();
+      logger.info("PostgreSQL connected via Prisma");
+    } catch (dbError) {
+      logger.warn(
+        "Failed to connect to PostgreSQL database — server will continue without database",
+        dbError,
+      );
+    }
 
     // ── Cache ───────────────────────────────────────────────────────────────
-    await connectRedis();
-    logger.info("Redis connected");
+    try {
+      await connectRedis();
+      logger.info("Redis connected");
+    } catch (redisError) {
+      logger.warn(
+        "Failed to connect to Redis — server will continue without cache",
+        redisError,
+      );
+    }
 
     // ── HTTP Server ─────────────────────────────────────────────────────────
     const server = app.listen(env.PORT, () => {
@@ -34,7 +48,6 @@ async function bootstrap(): Promise<void> {
     process.on("SIGINT", () => shutdown("SIGINT"));
   } catch (error) {
     logger.error("Failed to start server", error);
-    await prisma.$disconnect();
     process.exit(1);
   }
 }
